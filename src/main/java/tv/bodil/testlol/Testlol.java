@@ -16,10 +16,14 @@ package tv.bodil.testlol;
  * limitations under the License.
  */
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Calendar;
 
@@ -29,19 +33,18 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  * Goal which touches a timestamp file.
- * 
+ *
  * @goal test
- * 
+ *
  * @phase process-sources
  */
 public class Testlol extends AbstractMojo {
     /**
      * Location of the test suite.
-     * 
+     *
      * @parameter
      * @required
      */
@@ -49,7 +52,7 @@ public class Testlol extends AbstractMojo {
 
     /**
      * List of Javascript files to include in every scope.
-     * 
+     *
      * @parameter
      */
     private File[] globalFiles;
@@ -66,42 +69,71 @@ public class Testlol extends AbstractMojo {
         getLog().info("Time spent " + what + ": " + time + " ms");
     }
 
+    private Script loadJSResource(Context cx, String path) throws IOException {
+        Reader in = new InputStreamReader(getClass().getClassLoader().getResourceAsStream(path));
+        return cx.compileReader(in, "classpath:" + path, 1, null);
+    }
+
+    public File copyClasspathResource(String path) throws IOException {
+        File source = new File(path);
+        File tempfile = File.createTempFile(source.getName(), ".tmp");
+        tempfile.deleteOnExit();
+        BufferedReader in = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(
+                path)));
+        BufferedWriter out = new BufferedWriter(new FileWriter(tempfile));
+        char[] buf = new char[1024];
+        int len;
+        while ((len = in.read(buf)) > 0) {
+            out.write(buf, 0, len);
+        }
+        in.close();
+        out.close();
+        return tempfile;
+    }
+
     public void execute() throws MojoExecutionException {
         Context cx = new ContextFactory().enterContext();
 
         try {
             // Load global files
             startTimer();
+            getLog().info("Compiling Env.js");
+            Script envjs = loadJSResource(cx, "/js/env.rhino.js");
+            markTimer("compiling Env.js");
+            Script testinit = loadJSResource(cx, "/js/testinit.js");
+            Script jsUnit = loadJSResource(cx, "/js/jsUnitCore.js");
+
+            TestSuite tests = new TestSuite(testSuite);
+
+            startTimer();
+            getLog().info("Compiling global scripts");
             globalScripts = new Script[globalFiles.length];
             for (int i = 0; i < globalFiles.length; i++) {
-                File file = globalFiles[i];
-                getLog().info("Loading global script " + file.toString());
-                Reader in = new FileReader(file);
-                Script script = cx.compileReader(in, file.toString(), 1, null);
-                globalScripts[i] = script;
+                getLog().info("Compiling " + globalFiles[i].getPath());
+                globalScripts[i] = cx.compileReader(new FileReader(globalFiles[i]), globalFiles[i].getPath(), 1, null);
             }
             markTimer("compiling global scripts");
 
             getLog().info("Running test suite in " + testSuite.toString());
 
             startTimer();
-            Scriptable scope = cx.initStandardObjects();
+            Shell shell = new Shell(this, cx);
             markTimer("initStandardObjects()");
-            Object logger = Context.javaToJS(getLog(), scope);
-            ScriptableObject.putProperty(scope, "_testlol_logger", logger);
-            cx.evaluateString(scope,
-                            "function print() { var s = ''; for (var i=0;i<arguments.length;i++) s+=arguments[i]; _testlol_logger.info(s); }",
-                            "<internal>", 1, null);
-            for (int i = 0; i < globalScripts.length; i++) {
-                Script script = globalScripts[i];
-                script.exec(cx, scope);
-            }
-            markTimer("initialising scope for test");
+            envjs.exec(cx, shell);
+            markTimer("initialising Env.js");
+            jsUnit.exec(cx, shell);
+            testinit.exec(cx, shell);
             startTimer();
-            Object result = cx.evaluateString(scope, "window;", "<cmd>", 1,
-                    null);
-            getLog().info(Context.toString(result));
-            markTimer("running test");
+            for (Script script : globalScripts) {
+                script.exec(cx, shell);
+            }
+            markTimer("initialising global scripts");
+
+            Script testRunner = loadJSResource(cx, "/js/testrunner.js");
+
+            startTimer();
+            tests.runTests(shell, cx, testRunner, getLog());
+            markTimer("running test suite");
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage());
         } catch (IOException e) {
@@ -109,5 +141,9 @@ public class Testlol extends AbstractMojo {
         } finally {
             Context.exit();
         }
+    }
+
+    public File[] getGlobalFiles() {
+        return this.globalFiles;
     }
 }
