@@ -31,4 +31,17 @@
 		    <version>1.7R2</version>
 		</dependency> 
 	</dependencies>
+
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <url>${distribution.root}releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <uniqueVersion>false</uniqueVersion>
+            <url>${distribution.root}snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
