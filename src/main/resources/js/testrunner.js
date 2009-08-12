@@ -1,5 +1,5 @@
 var tried = 0, passed = 0, failed = 0;
-var failedDetails = {};
+var details = {};
 
 if (typeof this.setUp == "function") {
     this.setUp();
@@ -12,12 +12,13 @@ for (key in this) {
         try {
             member.call(this);
             passed++;
+            details[key] = { success: true };
         } catch (e) {
             failed++;
             if (e.rhinoException) {
                 e.stackTrace = e.rhinoException.getScriptStackTrace();
             }
-            failedDetails[key] = e;
+            details[key] = { failure: true, exception: e };
         }
     }
 }

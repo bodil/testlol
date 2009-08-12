@@ -65,7 +65,13 @@ public class Testlol extends AbstractMojo {
      * @parameter
      */
     private File[] globalFiles;
-    private Script[] globalScripts;
+    
+    /**
+     * Path for report generation.
+     * 
+     * @parameter expression="${project.build.directory}/surefire-reports"
+     */
+    private File reportPath;
 
     private long timer;
 
@@ -110,7 +116,7 @@ public class Testlol extends AbstractMojo {
         try {
             // Load global files
 
-            TestSuite tests = new TestSuite(getTestSuite());
+            TestSuite tests = new TestSuite(testSuite, reportPath);
 
             getLog().info("Running test suite in " + getTestSuite().toString());
 
