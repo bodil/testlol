@@ -20,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -34,6 +33,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.EcmaError;
 import org.mozilla.javascript.Script;
+import org.mozilla.javascript.Scriptable;
 
 /**
  * Goal which touches a timestamp file.
@@ -83,6 +83,10 @@ public class Testlol extends AbstractMojo {
         return cx.compileReader(in, "classpath:" + path, 1, null);
     }
 
+    private void execJSResource(Context cx, Scriptable scope, String path) throws IOException {
+        loadJSResource(cx, path).exec(cx, scope);
+    }
+
     public File copyClasspathResource(String path) throws IOException {
         File source = new File(path);
         File tempfile = File.createTempFile(source.getName(), ".tmp");
@@ -105,46 +109,36 @@ public class Testlol extends AbstractMojo {
 
         try {
             // Load global files
-            startTimer();
-            getLog().info("Compiling Env.js");
-            Script envjs = loadJSResource(cx, "/js/env.rhino.js");
-            markTimer("compiling Env.js");
-            Script testinit = loadJSResource(cx, "/js/testinit.js");
-            Script jsUnit = loadJSResource(cx, "/js/jsUnitCore.js");
 
             TestSuite tests = new TestSuite(getTestSuite());
-
-            startTimer();
-            globalScripts = new Script[globalFiles.length];
-            for (int i = 0; i < globalFiles.length; i++) {
-                getLog().info("Compiling " + globalFiles[i].getPath());
-                globalScripts[i] = cx.compileReader(new FileReader(globalFiles[i]), globalFiles[i].getPath(), 1, null);
-            }
-            markTimer("compiling global scripts");
 
             getLog().info("Running test suite in " + getTestSuite().toString());
 
             startTimer();
             Shell shell = new Shell(this, cx);
             markTimer("initStandardObjects()");
-            envjs.exec(cx, shell);
-            markTimer("initialising Env.js");
-            jsUnit.exec(cx, shell);
-            testinit.exec(cx, shell);
-            startTimer();
-            for (Script script : globalScripts) {
-                script.exec(cx, shell);
+            getLog().info("Loading Env.js");
+            execJSResource(cx, shell, "/js/env.rhino.js");
+            execJSResource(cx, shell, "/js/testinit.js");
+            execJSResource(cx, shell, "/js/jsUnitCore.js");
+            markTimer("loading environment");
+            if (globalFiles != null) {
+                startTimer();
+                for (File file : globalFiles) {
+                    getLog().info("Loading " + file.getPath());
+                    execJSResource(cx, shell, file.getPath());
+                }
+                markTimer("loading global scripts");
             }
-            markTimer("initialising global scripts");
 
             Script testRunner = loadJSResource(cx, "/js/testrunner.js");
 
             startTimer();
             int failed = tests.runTests(shell, cx, testRunner, getLog());
+            markTimer("running test suite");
             if (failed > 0) {
                 throw new MojoFailureException(failed + " test" + (failed == 1 ? "" : "s") + " failed");
             }
-            markTimer("running test suite");
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage());
         } catch (IOException e) {
@@ -154,10 +148,6 @@ public class Testlol extends AbstractMojo {
         } finally {
             Context.exit();
         }
-    }
-
-    public File[] getGlobalFiles() {
-        return this.globalFiles;
     }
 
     public File getTestSuite() {

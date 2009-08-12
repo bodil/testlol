@@ -1,11 +1,9 @@
 package tv.bodil.testlol;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
@@ -32,11 +30,6 @@ public class Shell extends ScriptableObject {
         String[] names = { "print", "load", "getClasspathResource" };
         defineFunctionProperties(names, Shell.class, ScriptableObject.DONTENUM);
         Scriptable props = cx.newObject(this);
-        Object[] files = new Object[testlol.getGlobalFiles().length];
-        for (int i = 0; i < testlol.getGlobalFiles().length; i++) {
-            files[i] = testlol.getGlobalFiles()[i].toString();
-        }
-        props.put("globalFiles", props, cx.newArray(this, files));
         props.put("testSuite", props, Context.javaToJS(testlol.getTestSuite(), this));
         props.put("basePath", props, Context.javaToJS(testlol.getBasePath(), this));
         this.defineProperty("_testlol", props, ScriptableObject.DONTENUM);
