@@ -55,7 +55,7 @@ public class TestSuite {
     }
 
     public int runTests(Shell shell, Context cx, Script testRunner, Log log) throws MojoExecutionException, IOException {
-        int total = 0;
+        int total = 0, totalFailed = 0;
         String pathPrefix = testSuitePath.getCanonicalPath();
         for (File file : tests) {
             String path = file.getCanonicalPath();
@@ -90,7 +90,7 @@ public class TestSuite {
                         }
                     }
                     log.info("");
-                    return failed;
+                    totalFailed += failed;
                 }
                 total += passed;
             } catch (FileNotFoundException e) {
@@ -100,9 +100,9 @@ public class TestSuite {
             }
         }
         log.info("");
-        log.info("Total tests passed: " + total);
+        log.info("Total tests passed: " + total + ((totalFailed > 0) ? (", total tests FAILED: " + totalFailed) : ""));
         log.info("");
-        return 0;
+        return totalFailed;
     }
 
     private void reportTestCase(String path, Scriptable details, int total, int failed) throws MojoExecutionException {
