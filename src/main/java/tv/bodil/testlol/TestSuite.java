@@ -5,8 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.util.Calendar;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -117,7 +117,7 @@ public class TestSuite {
         root.setAttribute("tests", "" + total);
         root.setAttribute("failures", "" + failed);
         root.setAttribute("name", path);
-        root.setAttribute("timestamp", DateFormat.getDateTimeInstance().format(Calendar.getInstance().getTime()));
+        root.setAttribute("timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date()));
         for (Object id : details.getIds()) {
             ScriptableObject detail = (ScriptableObject) details.get(Context.toString(id),
                     details);
