@@ -1,5 +1,4 @@
 var tried = 0, passed = 0, failed = 0;
-
 var failedDetails = {};
 
 if (typeof this.setUp == "function") {
@@ -15,6 +14,9 @@ for (key in this) {
             passed++;
         } catch (e) {
             failed++;
+            if (e.rhinoException) {
+                e.stackTrace = e.rhinoException.getScriptStackTrace();
+            }
             failedDetails[key] = e;
         }
     }
@@ -23,3 +25,4 @@ for (key in this) {
 if (typeof this.tearDown == "function") {
     this.tearDown();
 }
+

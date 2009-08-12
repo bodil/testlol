@@ -29,10 +29,11 @@ import java.util.Calendar;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.EcmaError;
 import org.mozilla.javascript.Script;
-import org.mozilla.javascript.Scriptable;
 
 /**
  * Goal which touches a timestamp file.
@@ -51,6 +52,14 @@ public class Testlol extends AbstractMojo {
     private File testSuite;
 
     /**
+     * Location of the files under testing.
+     *
+     * @parameter
+     * @required
+     */
+    private File basePath;
+
+    /**
      * List of Javascript files to include in every scope.
      *
      * @parameter
@@ -66,7 +75,7 @@ public class Testlol extends AbstractMojo {
 
     private void markTimer(String what) {
         long time = Calendar.getInstance().getTimeInMillis() - timer;
-        getLog().info("Time spent " + what + ": " + time + " ms");
+        getLog().debug("Time spent " + what + ": " + time + " ms");
     }
 
     private Script loadJSResource(Context cx, String path) throws IOException {
@@ -91,7 +100,7 @@ public class Testlol extends AbstractMojo {
         return tempfile;
     }
 
-    public void execute() throws MojoExecutionException {
+    public void execute() throws MojoExecutionException, MojoFailureException {
         Context cx = new ContextFactory().enterContext();
 
         try {
@@ -103,10 +112,9 @@ public class Testlol extends AbstractMojo {
             Script testinit = loadJSResource(cx, "/js/testinit.js");
             Script jsUnit = loadJSResource(cx, "/js/jsUnitCore.js");
 
-            TestSuite tests = new TestSuite(testSuite);
+            TestSuite tests = new TestSuite(getTestSuite());
 
             startTimer();
-            getLog().info("Compiling global scripts");
             globalScripts = new Script[globalFiles.length];
             for (int i = 0; i < globalFiles.length; i++) {
                 getLog().info("Compiling " + globalFiles[i].getPath());
@@ -114,7 +122,7 @@ public class Testlol extends AbstractMojo {
             }
             markTimer("compiling global scripts");
 
-            getLog().info("Running test suite in " + testSuite.toString());
+            getLog().info("Running test suite in " + getTestSuite().toString());
 
             startTimer();
             Shell shell = new Shell(this, cx);
@@ -132,12 +140,17 @@ public class Testlol extends AbstractMojo {
             Script testRunner = loadJSResource(cx, "/js/testrunner.js");
 
             startTimer();
-            tests.runTests(shell, cx, testRunner, getLog());
+            int failed = tests.runTests(shell, cx, testRunner, getLog());
+            if (failed > 0) {
+                throw new MojoFailureException(failed + " test" + (failed == 1 ? "" : "s") + " failed");
+            }
             markTimer("running test suite");
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage());
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage());
+        } catch (EcmaError e) {
+            throw new MojoFailureException(e.getMessage());
         } finally {
             Context.exit();
         }
@@ -145,5 +158,13 @@ public class Testlol extends AbstractMojo {
 
     public File[] getGlobalFiles() {
         return this.globalFiles;
+    }
+
+    public File getTestSuite() {
+        return this.testSuite;
+    }
+
+    public File getBasePath() {
+        return this.basePath;
     }
 }

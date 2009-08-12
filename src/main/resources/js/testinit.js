@@ -32,3 +32,4 @@
     
 })(Envjs);
 
+var basePath = _testlol.basePath + "/";

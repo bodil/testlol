@@ -342,6 +342,7 @@ function getStackTrace() {
         }
         catch(testExcp)
         {
+            return testExcp.rhinoException.getScriptStackTrace();
             var stack = parseErrorStack(testExcp);
             for (var i = 1; i < stack.length; i++)
             {
