@@ -39,6 +39,10 @@ public class TestSuite {
     public TestSuite(File path, File reportPath) throws MojoExecutionException {
         this.testSuitePath = path;
         this.reportPath = reportPath;
+        reportPath.mkdirs();
+        for (File file : reportPath.listFiles()) {
+            file.delete();
+        }
         findTests(path);
     }
 
@@ -62,7 +66,7 @@ public class TestSuite {
             if (path.startsWith(pathPrefix)) {
                 path = path.substring(pathPrefix.length() + 1).replace(File.separatorChar, '.');
             }
-            
+
             // Copy the global scope to attempt to isolate the test's environment
             Scriptable testScope = cx.newObject(shell);
             testScope.setPrototype(shell);
@@ -151,10 +155,6 @@ public class TestSuite {
             root.appendChild(testCase);
         }
 
-        reportPath.mkdirs();
-        for (File file : reportPath.listFiles()) {
-            file.delete();
-        }
         File report = new File(reportPath, "TEST-" + path + ".xml");
         Source source = new DOMSource(doc);
         Transformer xformer;
