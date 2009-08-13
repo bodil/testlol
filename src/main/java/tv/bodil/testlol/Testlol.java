@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -65,10 +66,10 @@ public class Testlol extends AbstractMojo {
      * @parameter
      */
     private File[] globalFiles;
-    
+
     /**
      * Path for report generation.
-     * 
+     *
      * @parameter expression="${project.build.directory}/surefire-reports"
      */
     private File reportPath;
@@ -132,7 +133,7 @@ public class Testlol extends AbstractMojo {
                 startTimer();
                 for (File file : globalFiles) {
                     getLog().info("Loading " + file.getPath());
-                    execJSResource(cx, shell, file.getPath());
+                    cx.evaluateReader(shell, new FileReader(file), file.getPath(), 1, null);
                 }
                 markTimer("loading global scripts");
             }
