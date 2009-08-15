@@ -1,21 +1,5 @@
 package tv.bodil.testlol;
 
-/*
- * Copyright 2001-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -37,16 +21,13 @@ import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
 
 /**
- * Goal which touches a timestamp file.
- *
  * @goal test
- *
- * @phase process-sources
+ * @phase test
  */
 public class Testlol extends AbstractMojo {
     /**
      * Location of the test suite.
-     *
+     * 
      * @parameter
      * @required
      */
@@ -54,7 +35,7 @@ public class Testlol extends AbstractMojo {
 
     /**
      * Location of the files under testing.
-     *
+     * 
      * @parameter
      * @required
      */
@@ -62,14 +43,14 @@ public class Testlol extends AbstractMojo {
 
     /**
      * List of Javascript files to include in every scope.
-     *
+     * 
      * @parameter
      */
     private File[] globalFiles;
 
     /**
      * Path for report generation.
-     *
+     * 
      * @parameter expression="${project.build.directory}/surefire-reports"
      */
     private File reportPath;
@@ -86,11 +67,13 @@ public class Testlol extends AbstractMojo {
     }
 
     private Script loadJSResource(Context cx, String path) throws IOException {
-        Reader in = new InputStreamReader(getClass().getClassLoader().getResourceAsStream(path));
+        Reader in = new InputStreamReader(getClass().getClassLoader()
+                .getResourceAsStream(path));
         return cx.compileReader(in, "classpath:" + path, 1, null);
     }
 
-    private void execJSResource(Context cx, Scriptable scope, String path) throws IOException {
+    private void execJSResource(Context cx, Scriptable scope, String path)
+            throws IOException {
         loadJSResource(cx, path).exec(cx, scope);
     }
 
@@ -98,8 +81,8 @@ public class Testlol extends AbstractMojo {
         File source = new File(path);
         File tempfile = File.createTempFile(source.getName(), ".tmp");
         tempfile.deleteOnExit();
-        BufferedReader in = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(
-                path)));
+        BufferedReader in = new BufferedReader(new InputStreamReader(getClass()
+                .getClassLoader().getResourceAsStream(path)));
         BufferedWriter out = new BufferedWriter(new FileWriter(tempfile));
         char[] buf = new char[1024];
         int len;
@@ -133,7 +116,8 @@ public class Testlol extends AbstractMojo {
                 startTimer();
                 for (File file : globalFiles) {
                     getLog().info("Loading " + file.getPath());
-                    cx.evaluateReader(shell, new FileReader(file), file.getPath(), 1, null);
+                    cx.evaluateReader(shell, new FileReader(file), file
+                            .getPath(), 1, null);
                 }
                 markTimer("loading global scripts");
             }
@@ -144,7 +128,8 @@ public class Testlol extends AbstractMojo {
             int failed = tests.runTests(shell, cx, testRunner, getLog());
             markTimer("running test suite");
             if (failed > 0) {
-                throw new MojoFailureException(failed + " test" + (failed == 1 ? "" : "s") + " failed");
+                throw new MojoFailureException(failed + " test"
+                        + (failed == 1 ? "" : "s") + " failed");
             }
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage());

@@ -30,8 +30,10 @@ public class Shell extends ScriptableObject {
         String[] names = { "print", "load", "getClasspathResource" };
         defineFunctionProperties(names, Shell.class, ScriptableObject.DONTENUM);
         Scriptable props = cx.newObject(this);
-        props.put("testSuite", props, Context.javaToJS(testlol.getTestSuite(), this));
-        props.put("basePath", props, Context.javaToJS(testlol.getBasePath(), this));
+        props.put("testSuite", props, Context.javaToJS(testlol.getTestSuite(),
+                this));
+        props.put("basePath", props, Context.javaToJS(testlol.getBasePath(),
+                this));
         this.defineProperty("_testlol", props, ScriptableObject.DONTENUM);
     }
 
@@ -46,7 +48,8 @@ public class Shell extends ScriptableObject {
         return shell;
     }
 
-    public static void print(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
+    public static void print(Context cx, Scriptable thisObj, Object[] args,
+            Function funObj) {
         StringBuilder out = new StringBuilder();
         for (int i = 0; i < args.length; i++) {
             if (i > 0)
@@ -59,17 +62,20 @@ public class Shell extends ScriptableObject {
         shell.testlol.getLog().info(out.toString());
     }
 
-    public static void load(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
+    public static void load(Context cx, Scriptable thisObj, Object[] args,
+            Function funObj) {
         Shell shell = getShell(thisObj);
         for (Object arg : args) {
             shell.processSource(cx, Context.toString(arg), thisObj);
         }
     }
 
-    public static String getClasspathResource(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
+    public static String getClasspathResource(Context cx, Scriptable thisObj,
+            Object[] args, Function funObj) {
         Shell shell = (Shell) getTopLevelScope(thisObj);
         try {
-            File file = shell.testlol.copyClasspathResource(Context.toString(args[0]));
+            File file = shell.testlol.copyClasspathResource(Context
+                    .toString(args[0]));
             return file.getPath();
         } catch (IOException e) {
             throw new JavaScriptException(e.getMessage(), "<testlol>", 1);
@@ -78,10 +84,11 @@ public class Shell extends ScriptableObject {
 
     /**
      * Evaluate JavaScript source.
-     *
-     * @param cx the current context
-     * @param filename the name of the file to compile, or null
-     *                 for interactive mode.
+     * 
+     * @param cx
+     *            the current context
+     * @param filename
+     *            the name of the file to compile, or null for interactive mode.
      */
     private void processSource(Context cx, String filename, Scriptable scope) {
         FileReader in = null;
