@@ -1,3 +1,12 @@
+ABOUT
+=====
+
+Testlol is a Maven plugin for running Javascript unit tests in a headless browser
+environment. It is built on Rhino, Env.js and JsUnit.
+
+HOWTO
+=====
+
 To use in your own project, add this to your POM file, and edit as appropriate:
 
     <build>
@@ -5,7 +14,7 @@ To use in your own project, add this to your POM file, and edit as appropriate:
             <plugin>
                 <groupId>tv.bodil</groupId>
                 <artifactId>maven-testlol-plugin</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>1.0</version>
                 <executions>
                     <execution>
                         <phase>test</phase>
@@ -24,3 +33,31 @@ To use in your own project, add this to your POM file, and edit as appropriate:
             </plugin>
         </plugins>
     </build>
+
+Your tests might look like this:
+
+    load(basePath + "classToTest.js");
+    
+    function testMyClass() {
+        var obj = new MyClass();
+        assertEquals(4, obj.add(2, 2));
+    }
+
+The "basePath" variable in the first line is simply the path configured in the
+"basePath" property in the POM, and should point to the base of the code tree
+you are testing.
+
+Point the "testSuite" property at your test files. It will scan this directory
+recursively and run through any file found inside it ending with the ".js" prefix.
+Any function whose name starts with the word "test" is considered a test. If there
+is a function called "setUp" in the file, it will be run prior to executing the
+tests. Likewise, a function called "tearDown", if present, will be run after the
+tests have finished executing.
+
+You can preload Javascript files into your test environment using the "globalFiles"
+property. Use this to load eg. frameworks and toolkits. Never load code you are
+testing in this way, because it is shared between every test suite, and changes
+made in one test will persist into the following tests.
+
+To learn about writing tests, refer to the JsUnit documentation. All JsUnit
+asserts etc. are available in the Testlol environment.
