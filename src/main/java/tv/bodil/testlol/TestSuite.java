@@ -138,12 +138,16 @@ public class TestSuite {
         root.setAttribute("name", path);
         root.setAttribute("timestamp", new SimpleDateFormat(
                 "yyyy-MM-dd'T'HH:mm:ss").format(new Date()));
+        Double totalTime = 0.0;
         for (Object id : details.getIds()) {
             ScriptableObject detail = (ScriptableObject) details.get(Context
                     .toString(id), details);
             Element testCase = doc.createElement("testcase");
             testCase.setAttribute("classname", path);
             testCase.setAttribute("name", Context.toString(id));
+            Double testTime = ((Double) Context.jsToJava(detail.get("time", detail), Double.class)) / 1000.0;
+            testCase.setAttribute("time", String.format("%.3f", testTime));
+            totalTime += testTime;
             if (detail.has("failure", detail)) {
                 ScriptableObject error = (ScriptableObject) detail.get(
                         "exception", detail);
@@ -174,6 +178,7 @@ public class TestSuite {
             }
             root.appendChild(testCase);
         }
+        root.setAttribute("time", String.format("%.3f", totalTime));
 
         File report = new File(reportPath, "TEST-" + path + ".xml");
         Source source = new DOMSource(doc);

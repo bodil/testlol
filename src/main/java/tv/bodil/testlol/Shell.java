@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Calendar;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
@@ -27,7 +28,7 @@ public class Shell extends ScriptableObject {
         super();
         this.testlol = testlol;
         cx.initStandardObjects(this);
-        String[] names = { "print", "load", "getClasspathResource" };
+        String[] names = { "print", "load", "getClasspathResource", "getLolTimer" };
         defineFunctionProperties(names, Shell.class, ScriptableObject.DONTENUM);
         Scriptable props = cx.newObject(this);
         props.put("testSuite", props, Context.javaToJS(testlol.getTestSuite(),
@@ -120,6 +121,11 @@ public class Shell extends ScriptableObject {
                 System.err.println(ioe.toString());
             }
         }
+    }
+
+    public static long getLolTimer(Context cx, Scriptable thisObj, Object[] args,
+            Function funObj) {
+        return Calendar.getInstance().getTimeInMillis();
     }
 
 };
