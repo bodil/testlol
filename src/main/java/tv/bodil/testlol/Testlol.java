@@ -76,6 +76,13 @@ public class Testlol extends AbstractMojo {
      */
     private File jsLintBasePath;
 
+    /**
+     * Options for JSLint, in the format "option1=value1 option2=value2 ..."
+     *
+     * @parameter
+     */
+    private String jsLintOptions;
+
     private long timer;
 
     private void startTimer() {
@@ -126,7 +133,7 @@ public class Testlol extends AbstractMojo {
                     jsLintBasePath = basePath;
                 }
                 getLog().info("Running JSLint in " + jsLintBasePath);
-                JSLintRunner jsLintRunner = new JSLintRunner(jsLintBasePath);
+                JSLintRunner jsLintRunner = new JSLintRunner(jsLintBasePath, jsLintOptions);
                 int failed = jsLintRunner.lint(getLog());
                 if (jsLintStrict && failed > 0) {
                     throw new MojoFailureException("JSLint found " + failed + " issue" + (failed == 1 ? "." : "s."));
