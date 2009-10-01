@@ -27,7 +27,7 @@ import org.mozilla.javascript.Scriptable;
 public class Testlol extends AbstractMojo {
     /**
      * Location of the test suite.
-     * 
+     *
      * @parameter
      * @required
      */
@@ -35,7 +35,7 @@ public class Testlol extends AbstractMojo {
 
     /**
      * Location of the files under testing.
-     * 
+     *
      * @parameter
      * @required
      */
@@ -43,17 +43,38 @@ public class Testlol extends AbstractMojo {
 
     /**
      * List of Javascript files to include in every scope.
-     * 
+     *
      * @parameter
      */
     private File[] globalFiles;
 
     /**
      * Path for report generation.
-     * 
+     *
      * @parameter expression="${project.build.directory}/surefire-reports"
      */
     private File reportPath;
+
+    /**
+     * Run JSLint.
+     *
+     * @parameter expression="true"
+     */
+    private boolean jsLint;
+
+    /**
+     * JSLint issues are considered errors.
+     *
+     * @parameter expression="false"
+     */
+    private boolean jsLintStrict;
+
+    /**
+     * Path to run JSLint on, if different from basePath.
+     *
+     * @parameter
+     */
+    private File jsLintBasePath;
 
     private long timer;
 
@@ -98,6 +119,20 @@ public class Testlol extends AbstractMojo {
         Context cx = new ContextFactory().enterContext();
 
         try {
+            // Run JSLint
+
+            if (jsLint) {
+                if (jsLintBasePath == null) {
+                    jsLintBasePath = basePath;
+                }
+                getLog().info("Running JSLint in " + jsLintBasePath);
+                JSLintRunner jsLintRunner = new JSLintRunner(jsLintBasePath);
+                int failed = jsLintRunner.lint(getLog());
+                if (jsLintStrict && failed > 0) {
+                    throw new MojoFailureException("JSLint found " + failed + " issue" + (failed == 1 ? "." : "s."));
+                }
+            }
+
             // Load global files
 
             TestSuite tests = new TestSuite(testSuite, reportPath);
