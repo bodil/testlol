@@ -15,6 +15,16 @@ for (key in this) {
             passed++;
             details[key] = { success: true, time: getLolTimer() - timer };
         } catch (e) {
+            // If somebody threw a string, rethrow it as a proper exception.            
+            if (typeof e == "string") {
+                try {
+                    throw new Error(e);
+                } catch (wrapped) {
+                    e = wrapped;
+                    e.wasString = true;
+                }
+            }
+            
             failed++;
             if (e.rhinoException) {
                 e.stackTrace = e.rhinoException.getScriptStackTrace();

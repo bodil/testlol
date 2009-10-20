@@ -98,8 +98,7 @@ public class TestSuite {
                         ScriptableObject detail = (ScriptableObject) details
                                 .get(Context.toString(id), details);
                         if (detail.has("failure", detail)) {
-                            printError(log, (ScriptableObject) detail.get(
-                                    "exception", detail), path, Context
+                            printError(log, detail, path, Context
                                     .toString(id));
                         }
                     }
@@ -149,7 +148,7 @@ public class TestSuite {
             testCase.setAttribute("time", String.format("%.3f", testTime));
             totalTime += testTime;
             if (detail.has("failure", detail)) {
-                ScriptableObject error = (ScriptableObject) detail.get(
+                Scriptable error = (Scriptable) detail.get(
                         "exception", detail);
                 Element failure = doc.createElement("failure");
                 String msg = "";
@@ -161,16 +160,19 @@ public class TestSuite {
                             .toString());
                     msg = error.get("name", error) + ": "
                             + error.get("message", error);
+                } else {
+                    msg = error.toString();
                 }
                 failure.setAttribute("message", msg);
                 StringBuilder body = new StringBuilder();
                 body.append(msg + "\n");
-                NativeJavaObject stackWrap = (NativeJavaObject) error.get(
-                        "stackTrace", error);
-                String[] stack = ((String) stackWrap.unwrap()).split("\n");
-                for (String trace : stack) {
-                    if (!trace.contains("classpath:/")) {
-                        body.append(trace + "\n");
+                if (error.has("stackTrace", error)) {
+                    NativeJavaObject stackWrap = (NativeJavaObject) error.get("stackTrace", error);
+                    String[] stack = ((String) stackWrap.unwrap()).split("\n");
+                    for (String trace : stack) {
+                        if (!trace.contains("classpath:/")) {
+                            body.append(trace + "\n");
+                        }
                     }
                 }
                 failure.setTextContent(body.toString());
@@ -199,24 +201,31 @@ public class TestSuite {
         }
     }
 
-    private void printError(Log log, ScriptableObject error, String file,
+    private void printError(Log log, ScriptableObject detail, String file,
             String test) {
-        if (error.has("isJsUnitException", error)) {
-            log.error(test + "() FAILED: " + error.get("jsUnitMessage", error));
-        } else if (error.has("rhinoException", error)) {
-            // Exception e = (Exception)
-            // Context.jsToJava(error.get("rhinoException", error),
-            // Exception.class);
-            log.error(test + "() FAILED: " + error.get("name", error) + ": "
-                    + error.get("message", error));
-        }
-        NativeJavaObject stackWrap = (NativeJavaObject) error.get("stackTrace",
-                error);
-        String[] stack = ((String) stackWrap.unwrap()).split("\n");
-        for (String trace : stack) {
-            if (!trace.contains("classpath:/")) {
-                log.error(trace);
+        try {
+            Scriptable error = (Scriptable) detail.get("exception", detail);
+            if (error.has("isJsUnitException", error)) {
+                log.error(test + "() FAILED: " + error.get("jsUnitMessage", error));
+            } else if (error.has("rhinoException", error)) {
+                // Exception e = (Exception)
+                // Context.jsToJava(error.get("rhinoException", error),
+                // Exception.class);
+                log.error(test + "() FAILED: " + error.get("name", error) + ": "
+                        + error.get("message", error));
             }
+
+            NativeJavaObject stackWrap = (NativeJavaObject) error.get("stackTrace",
+                    error);
+            String[] stack = ((String) stackWrap.unwrap()).split("\n");
+            for (String trace : stack) {
+                if (!trace.contains("classpath:/")) {
+                    log.error(trace);
+                }
+            }
+        } catch (ClassCastException e) {
+            String error = (detail.get("exception", detail)).toString();
+            log.error(test + "() FAILED: Unhandled exception thrown in test code: " + error);
         }
     }
 }
