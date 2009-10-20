@@ -140,6 +140,8 @@ public class Testlol extends AbstractMojo {
                 }
             }
 
+            cx.setOptimizationLevel(-1);
+
             // Load global files
 
             TestSuite tests = new TestSuite(testSuite, reportPath);
