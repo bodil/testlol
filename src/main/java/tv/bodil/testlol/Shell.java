@@ -1,5 +1,8 @@
 package tv.bodil.testlol;
 
+import java.net.URL;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -92,12 +95,21 @@ public class Shell extends ScriptableObject {
      *            the name of the file to compile, or null for interactive mode.
      */
     private void processSource(Context cx, String filename, Scriptable scope) {
-        FileReader in = null;
-        try {
-            in = new FileReader(filename);
-        } catch (FileNotFoundException ex) {
-            Context.reportError("Couldn't open file \"" + filename + "\".");
-            return;
+        Reader in = null;
+        if(filename.startsWith("http:") || filename.startsWith("https:")){
+            try{
+                in = new InputStreamReader(new URL(filename).openStream());
+            }catch(Exception x){
+                Context.reportError("Couldn't open url \"" + filename + "\".");
+                return;
+            }
+        }else{
+            try {
+                in = new FileReader(filename);
+            } catch (FileNotFoundException ex) {
+                Context.reportError("Couldn't open file \"" + filename + "\".");
+                return;
+            }
         }
 
         try {
