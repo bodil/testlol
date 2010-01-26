@@ -1,12 +1,13 @@
 package tv.bodil.testlol;
 
-import java.net.URL;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Calendar;
 
 import org.mozilla.javascript.Context;
@@ -88,7 +89,7 @@ public class Shell extends ScriptableObject {
 
     /**
      * Evaluate JavaScript source.
-     * 
+     *
      * @param cx
      *            the current context
      * @param filename
@@ -96,20 +97,18 @@ public class Shell extends ScriptableObject {
      */
     private void processSource(Context cx, String filename, Scriptable scope) {
         Reader in = null;
-        if(filename.startsWith("http:") || filename.startsWith("https:")){
-            try{
-                in = new InputStreamReader(new URL(filename).openStream());
-            }catch(Exception x){
-                Context.reportError("Couldn't open url \"" + filename + "\".");
-                return;
-            }
-        }else{
+        try {
+            in = new InputStreamReader(new URL(filename).openStream());
+        } catch (MalformedURLException e) {
             try {
                 in = new FileReader(filename);
-            } catch (FileNotFoundException ex) {
+            } catch (FileNotFoundException e1) {
                 Context.reportError("Couldn't open file \"" + filename + "\".");
                 return;
             }
+        } catch (IOException e) {
+            Context.reportError("Couldn't open URL \"" + filename + "\".");
+            return;
         }
 
         try {
