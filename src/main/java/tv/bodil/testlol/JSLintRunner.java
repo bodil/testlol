@@ -1,3 +1,9 @@
+/*
+ * Copyright 2009 Bodil Stokke <bodil@bodil.tv>
+ *
+ * Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+ */
+
 package tv.bodil.testlol;
 
 import java.io.File;
