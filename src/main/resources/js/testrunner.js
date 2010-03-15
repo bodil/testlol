@@ -1,3 +1,9 @@
+/*
+ * Copyright 2009 Bodil Stokke <bodil@bodil.tv>
+ * 
+ * Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+ */
+
 var tried = 0, passed = 0, failed = 0;
 var details = {};
 
