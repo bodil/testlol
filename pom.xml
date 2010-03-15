@@ -4,9 +4,21 @@
 	<groupId>tv.bodil</groupId>
 	<artifactId>maven-testlol-plugin</artifactId>
 	<packaging>maven-plugin</packaging>
-	<version>1.1</version>
+	<version>1.2</version>
 	<name>Testlol</name>
 	<url>http://github.com/bodil/testlol</url>
+    <scm>
+        <url>git://github.com/bodil/testlol.git</url>
+    </scm>
+    <description>
+        Testlol is a Maven plugin for running Javascript unit tests in a headless browser
+        environment. It is built on Rhino, Env.js and JsUnit.
+    </description>
+    <licenses>
+        <license>
+            <name></name>
+        </license>
+    </licenses>
     <build>
         <plugins>
             <plugin>
@@ -37,6 +49,7 @@
         </dependency>
 	</dependencies>
 
+<!--
     <distributionManagement>
         <repository>
             <id>releases</id>
@@ -48,5 +61,6 @@
             <url>${distribution.root}snapshots</url>
         </snapshotRepository>
     </distributionManagement>
+-->
 
 </project>
