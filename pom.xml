@@ -14,6 +14,16 @@
         Testlol is a Maven plugin for running Javascript unit tests in a headless browser
         environment. It is built on Rhino, Env.js and JsUnit.
     </description>
+    <developers>
+    	<developer>
+    		<name>Bodil</name>
+    		<url>http://bodil.tv</url>
+    	</developer>
+    	<developer>
+    		<name>Stéphane Épardaud</name>
+    		<email>stef@epardaud.fr</email>
+    	</developer>
+    </developers>
 	<licenses>
 		<license>
 			<name>MIT License</name>
