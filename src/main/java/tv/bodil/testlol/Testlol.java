@@ -13,6 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Calendar;
@@ -101,8 +102,30 @@ public class Testlol extends AbstractMojo {
     }
 
     private Script loadJSResource(Context cx, String path) throws IOException {
-        Reader in = new InputStreamReader(getClass().getClassLoader()
-                .getResourceAsStream(path));
+        // We can't use getClass().getClassLoader().getResourceAsStream() on maven 3
+        // it returns null if the path starts with /. This was a maven 2 bug.
+
+        getLog().debug("loadJSResource.load : " + path);
+
+
+        // In order to support both maven 2 and maven 3, we try to turn around the maven
+        // 2 bug. The strategy is to try to load with the given path and if not found try
+        // to load the same resource by without the first / (if the first character is a /)
+        InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+        if (is == null) {
+            getLog().debug("Resource not found " + path + ", try a remove the first /");
+            if (path.startsWith("/")) {
+                path = path.substring(1); // Remove the first /
+                is = getClass().getClassLoader().getResourceAsStream(path);
+            }
+        }
+
+        // To be defensive, we just throw an exception here.
+        if (is == null) {
+            throw new IOException("cannot load resource : " + path);
+        }
+
+        Reader in = new InputStreamReader(is);
         return cx.compileReader(in, "classpath:" + path, 1, null);
     }
 
@@ -115,8 +138,25 @@ public class Testlol extends AbstractMojo {
         File source = new File(path);
         File tempfile = File.createTempFile(source.getName(), ".tmp");
         tempfile.deleteOnExit();
-        BufferedReader in = new BufferedReader(new InputStreamReader(getClass()
-                .getClassLoader().getResourceAsStream(path)));
+
+        // In order to support both maven 2 and maven 3, we try to turn around the maven
+        // 2 bug. The strategy is to try to load with the given path and if not found try
+        // to load the same resource by without the first / (if the first character is a /)
+        InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+        if (is == null) {
+            getLog().debug("Resource not found " + path + ", try a remove the first /");
+            if (path.startsWith("/")) {
+                path = path.substring(1); // Remove the first /
+                is = getClass().getClassLoader().getResourceAsStream(path);
+            }
+        }
+
+        // To be defensive, we just throw an exception here.
+        if (is == null) {
+            throw new IOException("cannot load resource : " + path);
+        }
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
         BufferedWriter out = new BufferedWriter(new FileWriter(tempfile));
         char[] buf = new char[1024];
         int len;
