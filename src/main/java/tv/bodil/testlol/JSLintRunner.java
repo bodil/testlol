@@ -18,6 +18,8 @@ import org.apache.maven.plugin.logging.Log;
 
 import com.googlecode.jslint4java.Issue;
 import com.googlecode.jslint4java.JSLint;
+import com.googlecode.jslint4java.JSLintBuilder;
+import com.googlecode.jslint4java.JSLintResult;
 import com.googlecode.jslint4java.Option;
 
 public class JSLintRunner {
@@ -26,7 +28,7 @@ public class JSLintRunner {
     private JSLint jsLint;
 
     public JSLintRunner(File basePath, String options) throws IOException, MojoExecutionException {
-        jsLint = new JSLint();
+        jsLint = new JSLintBuilder().fromDefault();
 
         if (options != null) {
             String[] optionsList = options.split(" +");
@@ -80,7 +82,8 @@ public class JSLintRunner {
                 path = path.substring(pathPrefix.length() + 1);
             }
             FileReader in = new FileReader(file);
-            List<Issue> issues = jsLint.lint(path, in);
+            JSLintResult result = jsLint.lint(path, in);
+            List<Issue> issues = result.getIssues();
             if (issues.size() > 0) {
                 errors += issues.size();
                 log.error("In file " + path + ":");
