@@ -2,3 +2,6 @@
 .classpath
 .settings
 target
+.idea
+maven-testlol-plugin.iml
+src/main/Main.iml

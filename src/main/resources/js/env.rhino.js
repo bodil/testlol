@@ -1,5 +1,5 @@
 /*
- * Envjs core-env.1.2.0.3 
+ * Envjs core-env.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -37,12 +37,12 @@ __this__ = this;
 Envjs.appCodeName  = "Envjs";
 
 //eg "Gecko/20070309 Firefox/2.0.0.3"
-Envjs.appName      = "Resig/20070309 PilotFish/1.2.0.3";
+Envjs.appName      = "Resig/20070309 PilotFish/1.2.0.6";
 
 Envjs.version = "1.6";//?
 
 /*
- * Envjs core-env.1.2.0.3 
+ * Envjs core-env.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -75,7 +75,11 @@ Envjs.NONE = 3;
  */
 Envjs.lineSource = function(e){};
 
-
+/**
+ * 
+ * @param {Object} event
+ */
+Envjs.defaultEventBehaviors = {};
 
 
 /**
@@ -137,13 +141,15 @@ Envjs.loadLocalScript = function(script){
                 //ok this script type is allowed
                 break;
             }
-            if(i+1 == types.length)
+            if(i+1 == types.length){
+                //console.log('wont load script type %s', script.type);
                 return false;
+            }
         }
     }
     
     try{
-        //handle inline scripts
+        //console.log('handling inline scripts');
         if(!script.src.length){
             Envjs.loadInlineScript(script);
             return true;
@@ -177,7 +183,6 @@ Envjs.loadLocalScript = function(script){
         xhr.onreadystatechange = function(){
             //console.log("readyState %s", xhr.readyState);
             if(xhr.readyState === 4){
-                //TODO this is rhino specific
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,
                     xhr.responseText,
@@ -218,7 +223,7 @@ Envjs.sleep = function(millseconds){};
 /**
  * Interval to wait on event loop when nothing is happening
  */
-Envjs.WAIT_INTERVAL = 100;//milliseconds
+Envjs.WAIT_INTERVAL = 20;//milliseconds
 
 
 /**
@@ -326,7 +331,7 @@ Envjs.loadFrame = function(frame, url){
 
 })();
 /*
- * Envjs rhino-env.1.2.0.3 
+ * Envjs rhino-env.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -337,7 +342,7 @@ var __context__ = Packages.org.mozilla.javascript.Context.getCurrentContext();
 Envjs.platform       = "Rhino";
 Envjs.revision       = "1.7.0.rc2";
 /*
- * Envjs rhino-env.1.2.0.3 
+ * Envjs rhino-env.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -535,6 +540,7 @@ Envjs.runAsync = function(fn, onInterupt){
     try{
         run = Envjs.sync(function(){ 
             fn();
+            Envjs.wait();
         });
         Envjs.spawn(run);
     }catch(e){
@@ -645,15 +651,28 @@ Envjs.connection = function(xhr, responseHandler, data){
         }
         
         //write data to output stream if required
-        if(data&&data.length&&data.length>0){
+        if(data){
+            if(data instanceof Document){
              if ( xhr.method == "PUT" || xhr.method == "POST" ) {
                 connection.setDoOutput(true);
                 var outstream = connection.getOutputStream(),
-                    outbuffer = new java.lang.String(data).getBytes('UTF-8');
+                    xml = (new XMLSerializer()).serializeToString(data),
+                    outbuffer = new java.lang.String(xml).getBytes('UTF-8');
                 
                 outstream.write(outbuffer, 0, outbuffer.length);
                 outstream.close();
-            }
+                }
+            }else if(data.length&&data.length>0){
+                if ( xhr.method == "PUT" || xhr.method == "POST" ) {
+                    connection.setDoOutput(true);
+                    var outstream = connection.getOutputStream(),
+                        outbuffer = new java.lang.String(data).getBytes('UTF-8');
+                    
+                    outstream.write(outbuffer, 0, outbuffer.length);
+                    outstream.close();
+                }
+            }else
+                connection.connect();
         }else{
             connection.connect();
         }
@@ -811,6 +830,25 @@ Envjs.proxy = function(scope, parent){
  */
 
 })();
+
+/**
+ * @author envjs team
+ */
+var Console,
+    console;
+
+/*
+ * Envjs console.1.2.0.6 
+ * Pure JavaScript Browser Environment
+ * By John Resig <http://ejohn.org/> and the Envjs Team
+ * Copyright 2008-2010 John Resig, under the MIT License
+ */
+
+(function(){
+
+
+
+
 
 /**
  * @author envjs team
@@ -1049,8 +1087,17 @@ function appendNode(node, html)
     }
 };
 
+
+/**
+ * @author john resig & the envjs team
+ * @uri http://www.envjs.com/
+ * @copyright 2008-2010
+ * @license MIT
+ */
+
+})();
 /*
- * Envjs dom.1.2.0.3 
+ * Envjs dom.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -1090,7 +1137,7 @@ var Attr,
 
 
 /*
- * Envjs dom.1.2.0.3 
+ * Envjs dom.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -4245,7 +4292,7 @@ __extend__(XMLSerializer.prototype, {
 
 })();
 /*
- * Envjs event.1.2.0.3 
+ * Envjs event.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -4265,7 +4312,7 @@ var Event,
     //among other things like general profiling
     Aspect;
 /*
- * Envjs event.1.2.0.3 
+ * Envjs event.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -4707,7 +4754,16 @@ function __dispatchEvent__(target, event, bubbles){
         if (bubbles && !event.cancelled){
             __bubbleEvent__(target, event);
         }
-        
+        if(!event._preventDefault){
+            //At this point I'm guessing that just HTMLEvents are concerned
+            //with default behavior being executed in a browser but I could be
+            //wrong as usual.  The goal is much more to filter at this point
+            //what events have no need to be handled
+            console.log('triggering default behavior for %s', event.type);
+            if(event.type in Envjs.defaultEventBehaviors){
+                Envjs.defaultEventBehaviors[event.type](event);
+            }
+        }
         //console.log('deleting event %s', event.uuid);
         event.target = null;
         event = null;
@@ -5090,7 +5146,7 @@ EventException.UNSPECIFIED_EVENT_TYPE_ERR = 0;
 })();
 
 /*
- * Envjs timer.1.2.0.3 
+ * Envjs timer.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -5106,7 +5162,7 @@ var setTimeout,
     clearInterval;
     
 /*
- * Envjs timer.1.2.0.3 
+ * Envjs timer.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -5356,7 +5412,7 @@ Envjs.wait = function(wait) {
 
 })();
 /*
- * Envjs html.1.2.0.3 
+ * Envjs html.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -5406,7 +5462,7 @@ var HTMLDocument,
     HTMLUnknownElement;
     
 /*
- * Envjs html.1.2.0.3 
+ * Envjs html.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -5771,6 +5827,7 @@ Aspect.around({
     switch(doc.parsing){
         case true:
             //handled by parser if included
+            //console.log('html document in parse mode');
             break;
         case false:
             switch(node.namespaceURI){
@@ -7001,6 +7058,174 @@ __extend__(HTMLTableColElement.prototype, {
 });
 
 
+/*
+ *	cookie.js 
+ *  Private internal helper class used to save/retreive cookies
+ */
+var Cookies = {
+	persistent:{
+		//domain - key on domain name {
+			//path - key on path {
+				//name - key on name {
+					 //value : cookie value
+					 //other cookie properties
+				//}
+			//}
+		//}
+		//expire - provides a timestamp for expiring the cookie
+		//cookie - the cookie!
+	},
+	temporary:{//transient is a reserved word :(
+		//like above
+	}
+};
+
+//HTMLDocument cookie
+Cookies.set = function(doc, cookie){
+	var i,
+        index,
+        name,
+        value,
+        properties = {},
+        attr,
+        attrs = cookie.split(";");
+    
+    var domainValid = function(doc, value){
+        var i,
+            domainParts = doc.domain.splt('.').reverse(),
+            newDomainParts = value.split('.').reverse();
+        if(newDomainParts.length > 1){
+            for(i=0;i<newDomainParts.length;i++){
+                if(!(newDomainParts[i] == domainParts[i])){
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    };
+	//for now the strategy is to simply create a json object
+	//and post it to a file in the .cookies.js file.  I hate parsing
+	//dates so I decided not to implement support for 'expires' 
+	//(which is deprecated) and instead focus on the easier 'max-age'
+	//(which succeeds 'expires') 
+	cookie = {};//keyword properties of the cookie
+	cookie['domain']=doc.domain;
+    if(typeof(doc.location) == 'object'){
+        cookie['path'] = doc.location.pathname;
+    }else{
+        cookie.path = '/';
+    }
+	for(i=0;i<attrs.length;i++){
+		index = attrs[i].indexOf("=");
+        if(index > -1){
+            name = __trim__(attrs[i].slice(0,index));
+            value = __trim__(attrs[i].slice(index+1));
+            if(name=='max-age'){
+               //we'll have to set a timer to check these
+				//and garbage collect expired cookies
+				cookie[name] = parseInt(value, 10);
+			} else if(name=='domain'){
+				if(domainValid(doc, value)){
+					cookie['domain']=value;
+				}
+			} else if(name=='path'){
+				//not sure of any special logic for path
+				cookie['path'] = value;
+			} else {
+				//its not a cookie keyword so store it in our array of properties
+				//and we'll serialize individually in a moment
+				properties[name] = value;
+			}
+		}else{
+			if(attrs[i] == 'secure'){
+                cookie[attrs[i]] = true;
+			}
+		}
+	}
+	if(!cookie['max-age']){
+		//it's a transient cookie so it only lasts as long as 
+		//the window.location remains the same
+		__mergeCookie__(Cookies.temporary, cookie, properties);
+	}else if(cookie['max-age']===0){
+		//delete the cookies
+		//TODO
+	}else{
+		//the cookie is persistent
+		__mergeCookie__(Cookies.persistent, cookie, properties);
+		__persistCookies__();
+	}
+};
+
+Cookies.get = function(doc){
+	//The cookies that are returned must belong to the same domain
+	//and be at or below the current window.location.path.  Also
+	//we must check to see if the cookie was set to 'secure' in which
+	//case we must check our current location.protocol to make sure it's
+	//https:
+	return  __cookieString__(Cookies.temporary, doc) + 
+            __cookieString__(Cookies.persistent, doc); 	
+};
+
+function __cookieString__(cookies, doc) {
+    var cookieString = ""
+        domain, 
+        path,
+        name;
+    for (domain in cookies) {
+        // check if the cookie is in the current domain (if domain is set)
+        if (domain == "" || domain == doc.domain) {
+            for (path in cookies[domain]) {
+                // make sure path is at or below the window location path
+                if (path == "/" || doc.documentURI.indexOf(path) > 0) {
+                    for (name in cookies[domain][path]) {
+                        cookieString += 
+                            name+"="+cookies[domain][path][name].value+";";
+                    }
+                }
+            }
+        }
+    }
+    return cookieString;
+};
+
+function __mergeCookie__(target, cookie, properties){
+	var name, now;
+	if(!target[cookie.domain]){
+		target[cookie.domain] = {};
+	}
+	if(!target[cookie.domain][cookie.path]){
+		target[cookie.domain][cookie.path] = {};
+	}
+	for(name in properties){
+		now = new Date().getTime();
+		target[cookie.domain][cookie.path][name] = {
+			value:properties[name],
+			"@env:secure":cookie.secure,
+			"@env:max-age":cookie['max-age'],
+			"@env:date-created":now,
+			"@env:expiration":now + cookie['max-age']
+		};
+	}
+};
+
+function __persistCookies__(){
+	//TODO
+	//I think it should be done via $env so it can be customized
+};
+
+function __loadCookies__(){
+	//TODO
+	//should also be configurable via $env	
+    try{
+        //TODO - load cookies
+        
+    }catch(e){
+        //TODO - fail gracefully
+    }   
+};
+
+	
 /* 
 * HTMLModElement - DOM Level 2
 */
@@ -8500,7 +8725,7 @@ var CSS2Properties,
     CSSStyleSheet;
     
 /*
- * Envjs css.1.2.0.3 
+ * Envjs css.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -8975,7 +9200,7 @@ var XMLParser = {},
 
     
 /*
- * Envjs parser.1.2.0.3 
+ * Envjs parser.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -9714,6 +9939,7 @@ var __elementPopped__ = function(ns, name, node){
     switch(doc.parsing){
         case false:
             //innerHTML so dont do loading patterns for parsing
+            //console.log('element popped (implies innerHTML) not in parsing mode %s', node.nodeName);
             break;
         case true:
             switch(doc+''){
@@ -9722,6 +9948,7 @@ var __elementPopped__ = function(ns, name, node){
                 case '[object HTMLDocument]':
                     switch(node.namespaceURI){
                         case "http://n.validator.nu/placeholder/":
+                            //console.log('got script during parsing %s', node.textContent);
                             break;
                         case null:
                         case "":
@@ -9854,7 +10081,7 @@ __extend__(HTMLElement.prototype,{
 
 })();
 /*
- * Envjs xhr.1.2.0.3 
+ * Envjs xhr.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -9869,7 +10096,7 @@ var Location,
     XMLHttpRequest;
 
 /*
- * Envjs xhr.1.2.0.3 
+ * Envjs xhr.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -10393,7 +10620,7 @@ Location = function(url, doc, history){
             if($document){
                 //console.log("fetching %s (async? %s)", url, $document.async);
                 xhr = new XMLHttpRequest();
-                xhr.open("GET", url, $document.async);
+                xhr.open("GET", url, false);//$document.async);
                 
                 if($document.toString()=="[object HTMLDocument]"){
                     //tell the xhr to not parse the document as XML
@@ -10506,12 +10733,11 @@ XMLHttpRequest = function(){
     this.aborted = false;//non-standard
 };
 
-// it would be nice if these were part of the standard but
-// they are not.
+// defined by the standard: http://www.w3.org/TR/XMLHttpRequest/#xmlhttprequest
 XMLHttpRequest.UNSENT = 0;
-XMLHttpRequest.OPEN = 0;
-XMLHttpRequest.HEADERS_RECEIVED = 0;
-XMLHttpRequest.LOADING = 0;
+XMLHttpRequest.OPEN = 1;
+XMLHttpRequest.HEADERS_RECEIVED = 2;
+XMLHttpRequest.LOADING = 3;
 XMLHttpRequest.DONE = 4;
 
 XMLHttpRequest.prototype = {
@@ -10635,7 +10861,7 @@ var Window,
 
 
 /*
- * Envjs window.1.2.0.3 
+ * Envjs window.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
