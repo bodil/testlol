@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
@@ -103,18 +104,27 @@ public class Shell extends ScriptableObject {
      */
     private void processSource(Context cx, String filename, Scriptable scope) {
         Reader in = null;
-        try {
-            in = new InputStreamReader(new URL(filename).openStream());
-        } catch (MalformedURLException e) {
-            try {
-                in = new FileReader(filename);
-            } catch (FileNotFoundException e1) {
-                Context.reportError("Couldn't open file \"" + filename + "\".");
+        if (filename.startsWith("classpath:")) {
+            String path = filename.substring(10);
+            in = new InputStreamReader(getClass().getClassLoader().getResourceAsStream(path));
+            if (in == null) {
+                Context.reportError("Couldn't open classpath resource \"" + path + "\".");
                 return;
             }
-        } catch (IOException e) {
-            Context.reportError("Couldn't open URL \"" + filename + "\".");
-            return;
+        } else {
+            try {
+                in = new InputStreamReader(new URL(filename).openStream());
+            } catch (MalformedURLException e) {
+                try {
+                    in = new FileReader(filename);
+                } catch (FileNotFoundException e1) {
+                    Context.reportError("Couldn't open file \"" + filename + "\".");
+                    return;
+                }
+            } catch (IOException e) {
+                Context.reportError("Couldn't open URL \"" + filename + "\".");
+                return;
+            }
         }
 
         try {

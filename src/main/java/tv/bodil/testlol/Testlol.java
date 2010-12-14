@@ -21,6 +21,7 @@ import java.util.Calendar;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.EcmaError;
@@ -32,6 +33,10 @@ import org.mozilla.javascript.Scriptable;
  * @phase test
  */
 public class Testlol extends AbstractMojo {
+    
+    /** @parameter default-value="${project}" */
+    private MavenProject project;
+    
     /**
      * Location of the test suite.
      *
@@ -53,7 +58,7 @@ public class Testlol extends AbstractMojo {
      *
      * @parameter
      */
-    private File[] globalFiles;
+    private String[] globalFiles;
 
     /**
      * Path for report generation.
@@ -204,10 +209,20 @@ public class Testlol extends AbstractMojo {
             markTimer("loading environment");
             if (globalFiles != null) {
                 startTimer();
-                for (File file : globalFiles) {
-                    getLog().info("Loading " + file.getPath());
-                    cx.evaluateReader(shell, new FileReader(file), file
-                            .getPath(), 1, null);
+                for (String path : globalFiles) {
+                    if (path.startsWith("classpath:")) {
+                        path = path.substring(10);
+                        getLog().info("Loading classpath:" + path);
+                        execJSResource(cx, shell, path);
+                    } else {
+                        File file = new File(path);
+                        if (!file.isAbsolute()) {
+                            file = new File(project.getBasedir(), path);
+                        }
+                        getLog().info("Loading " + file.getPath());
+                        cx.evaluateReader(shell, new FileReader(file), file
+                                .getPath(), 1, null);
+                    }
                 }
                 markTimer("loading global scripts");
             }
