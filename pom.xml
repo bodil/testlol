@@ -5,10 +5,10 @@
 	<packaging>maven-plugin</packaging>
 	<version>1.3-SNAPSHOT</version>
 	<name>Testlol</name>
-	<url>http://github.com/FroMage/testlol</url>
+	<url>http://github.com/bodil/testlol</url>
 	<scm>
-		<connection>scm:git:git://github.com/FroMage/testlol.git</connection>
-		<url>http://github.com/FroMage/testlol</url>
+		<connection>scm:git:git://github.com/bodil/testlol.git</connection>
+		<url>http://github.com/bodil/testlol</url>
 	</scm>
 	<description>
         Testlol is a Maven plugin for running Javascript unit tests in a headless browser
@@ -16,8 +16,8 @@
     </description>
     <developers>
     	<developer>
-    		<name>Bodil</name>
-    		<url>http://bodil.tv</url>
+    		<name>Bodil Stokke</name>
+            <email>bodil@bodil.tv</email>
     	</developer>
     	<developer>
     		<name>Stéphane Épardaud</name>
