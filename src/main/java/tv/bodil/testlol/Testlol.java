@@ -31,6 +31,7 @@ import org.mozilla.javascript.Scriptable;
 /**
  * @goal test
  * @phase test
+ * @configurator include-project-dependencies
  */
 public class Testlol extends AbstractMojo {
     
@@ -203,9 +204,9 @@ public class Testlol extends AbstractMojo {
             Shell shell = new Shell(this, cx);
             markTimer("initStandardObjects()");
             getLog().info("Loading Env.js");
-            execJSResource(cx, shell, "/js/env.rhino.js");
-            execJSResource(cx, shell, "/js/testinit.js");
-            execJSResource(cx, shell, "/js/jsUnitCore.js");
+            execJSResource(cx, shell, "/tv/bodil/testlol/js/env.rhino.js");
+            execJSResource(cx, shell, "/tv/bodil/testlol/js/testinit.js");
+            execJSResource(cx, shell, "/tv/bodil/testlol/js/jsUnitCore.js");
             markTimer("loading environment");
             if (globalFiles != null) {
                 startTimer();
@@ -227,7 +228,7 @@ public class Testlol extends AbstractMojo {
                 markTimer("loading global scripts");
             }
 
-            Script testRunner = loadJSResource(cx, "/js/testrunner.js");
+            Script testRunner = loadJSResource(cx, "/tv/bodil/testlol/js/testrunner.js");
 
             startTimer();
             int failed = tests.runTests(shell, cx, testRunner, getLog());

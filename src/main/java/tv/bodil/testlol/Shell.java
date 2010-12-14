@@ -87,7 +87,7 @@ public class Shell extends ScriptableObject {
 
     public static String getClasspathResource(Context cx, Scriptable thisObj,
             Object[] args, Function funObj) {
-        Shell shell = (Shell) getTopLevelScope(thisObj);
+        Shell shell = (Shell) getShell(thisObj);
         try {
             File file = shell.testlol.copyClasspathResource(Context
                     .toString(args[0]));
