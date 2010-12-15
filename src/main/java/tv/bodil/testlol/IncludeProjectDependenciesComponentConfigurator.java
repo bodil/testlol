@@ -59,10 +59,10 @@ public class IncludeProjectDependenciesComponentConfigurator extends
 		try {
 			// noinspection unchecked
 			runtimeClasspathElements = (List<String>) expressionEvaluator
-					.evaluate("${project.runtimeClasspathElements}");
+					.evaluate("${project.testClasspathElements}");
 		} catch (ExpressionEvaluationException e) {
 			throw new ComponentConfigurationException(
-					"There was a problem evaluating: ${project.runtimeClasspathElements}",
+					"There was a problem evaluating: ${project.testClasspathElements}",
 					e);
 		}
 
