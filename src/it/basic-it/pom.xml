@@ -1,0 +1,36 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>tv.bodil.testlol.it</groupId>
+    <artifactId>basic-it</artifactId>
+    <version>testing</version>
+    
+    <description>
+        Basic integration tests for Testlol.
+    </description>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>tv.bodil</groupId>
+                <artifactId>maven-testlol-plugin</artifactId>
+                <version>1.3-SNAPSHOT</version>
+                
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <basePath>src/main/js</basePath>
+                            <testSuite>src/test/js</testSuite>
+                           <globalFiles>
+                                <param>src/main/js/persistentGlobalScope.js</param>
+                           </globalFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
