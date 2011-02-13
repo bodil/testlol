@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,6 +52,7 @@ public class TestSuite {
             file.delete();
         }
         findTests(path);
+        Collections.sort(tests);
     }
 
     private void findTests(File path) {
