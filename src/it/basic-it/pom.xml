@@ -33,4 +33,14 @@
             </plugin>
         </plugins>
     </build>
+    
+    <dependencies>
+        <dependency>
+            <!-- add a random dependency to the test scope classpath so we can test for its existence -->
+            <groupId>de.berlios.jsunit</groupId>
+            <artifactId>jsunit</artifactId>
+            <version>1.3</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
