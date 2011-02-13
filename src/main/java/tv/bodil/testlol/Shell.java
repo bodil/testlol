@@ -109,11 +109,12 @@ public class Shell extends ScriptableObject {
         Reader in = null;
         if (filename.startsWith("classpath:")) {
             String path = filename.substring(10);
-            in = new InputStreamReader(getClass().getClassLoader().getResourceAsStream(path));
-            if (in == null) {
+            InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(path);
+            if (resourceAsStream == null) {
                 Context.reportError("Couldn't open classpath resource \"" + path + "\".");
                 return;
             }
+            in = new InputStreamReader(resourceAsStream);
         } else {
             try {
                 in = new InputStreamReader(new URL(filename).openStream());
