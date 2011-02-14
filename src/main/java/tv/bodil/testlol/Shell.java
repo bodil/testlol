@@ -89,8 +89,7 @@ public class Shell extends ScriptableObject {
             Object[] args, Function funObj) {
         Shell shell = (Shell) getShell(thisObj);
         try {
-            File file = shell.testlol.copyClasspathResource(Context
-                    .toString(args[0]));
+            File file = shell.testlol.copyClasspathResource(cx, Context.toString(args[0]));
             return file.getPath();
         } catch (IOException e) {
             throw new JavaScriptException(e.getMessage(), "<testlol>", 1);

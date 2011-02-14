@@ -16,8 +16,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Calendar;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -28,10 +35,12 @@ import org.mozilla.javascript.EcmaError;
 import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
 
+
 /**
  * @goal test
  * @phase test
  * @configurator include-project-dependencies
+ * @requiresDependencyResolution test
  */
 public class Testlol extends AbstractMojo {
     
@@ -97,6 +106,8 @@ public class Testlol extends AbstractMojo {
     private String jsLintOptions;
 
     private long timer;
+    
+    private static final Pattern regex = Pattern.compile("/.*?/\\.\\.");
 
     private void startTimer() {
         timer = Calendar.getInstance().getTimeInMillis();
@@ -108,39 +119,38 @@ public class Testlol extends AbstractMojo {
     }
 
     private Script loadJSResource(Context cx, String path) throws IOException {
-        // We can't use getClass().getClassLoader().getResourceAsStream() on maven 3
-        // it returns null if the path starts with /. This was a maven 2 bug.
-
-        getLog().debug("loadJSResource.load : " + path);
-
-
-        // In order to support both maven 2 and maven 3, we try to turn around the maven
-        // 2 bug. The strategy is to try to load with the given path and if not found try
-        // to load the same resource by without the first / (if the first character is a /)
-        InputStream is = getClass().getClassLoader().getResourceAsStream(path);
-        if (is == null) {
-            getLog().debug("Resource not found " + path + ", try a remove the first /");
-            if (path.startsWith("/")) {
-                path = path.substring(1); // Remove the first /
-                is = getClass().getClassLoader().getResourceAsStream(path);
-            }
-        }
-
-        // To be defensive, we just throw an exception here.
-        if (is == null) {
-            throw new IOException("cannot load resource : " + path);
-        }
-
-        Reader in = new InputStreamReader(is);
+        getLog().debug("Loading JavaScript resource: " + path);
+        Reader in = new InputStreamReader(loadClasspathResource(cx, path));
         return cx.compileReader(in, "classpath:" + path, 1, null);
     }
-
+    
     private void execJSResource(Context cx, Scriptable scope, String path)
             throws IOException {
         loadJSResource(cx, path).exec(cx, scope);
     }
 
-    public File copyClasspathResource(String path) throws IOException {
+    private InputStream loadClasspathResource(Context cx, String path) throws IOException {
+        Matcher matcher = regex.matcher(path);
+        while (matcher.find()) {
+            path = path.replace(matcher.group(), "");
+        }
+        InputStream inputStream = cx.getApplicationClassLoader().getResourceAsStream(path);
+        // In order to support both maven 2 and maven 3, we try to turn around the maven
+        // 2 bug. The strategy is to try to load with the given path and if not found try
+        // to load the same resource by without the first / (if the first character is a /)
+        if (inputStream == null) {
+            if (path.startsWith("/")) {
+                path = path.substring(1); // Remove the first /
+                inputStream = cx.getApplicationClassLoader().getResourceAsStream(path);
+            }
+        }
+        if (inputStream == null) {
+            throw new IOException("Unable to load resource: " + path);
+        }
+        return inputStream;
+    }
+
+    public File copyClasspathResource(Context cx, String path) throws IOException {
         File source = new File(path);
         File tempfile = File.createTempFile(source.getName(), ".tmp");
         tempfile.deleteOnExit();
@@ -148,21 +158,8 @@ public class Testlol extends AbstractMojo {
         // In order to support both maven 2 and maven 3, we try to turn around the maven
         // 2 bug. The strategy is to try to load with the given path and if not found try
         // to load the same resource by without the first / (if the first character is a /)
-        InputStream is = getClass().getClassLoader().getResourceAsStream(path);
-        if (is == null) {
-            getLog().debug("Resource not found " + path + ", try a remove the first /");
-            if (path.startsWith("/")) {
-                path = path.substring(1); // Remove the first /
-                is = getClass().getClassLoader().getResourceAsStream(path);
-            }
-        }
 
-        // To be defensive, we just throw an exception here.
-        if (is == null) {
-            throw new IOException("cannot load resource : " + path);
-        }
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        BufferedReader in = new BufferedReader(new InputStreamReader(loadClasspathResource(cx, path)));
         BufferedWriter out = new BufferedWriter(new FileWriter(tempfile));
         char[] buf = new char[1024];
         int len;
@@ -175,7 +172,18 @@ public class Testlol extends AbstractMojo {
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        Context cx = new ContextFactory().enterContext();
+        final ContextFactory contextFactory = new ContextFactory();
+
+        try {
+            ClassLoader cl = getClassLoader();
+            contextFactory.initApplicationClassLoader(cl);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        } catch (DependencyResolutionRequiredException e) {
+            throw new RuntimeException(e);
+        }
+
+        Context cx = contextFactory.enterContext();
 
         try {
             // Run JSLint
@@ -254,5 +262,20 @@ public class Testlol extends AbstractMojo {
 
     public File getBasePath() {
         return this.basePath;
+    }
+
+    public ClassLoader getClassLoader() throws MalformedURLException, DependencyResolutionRequiredException {
+        @SuppressWarnings("unchecked")
+        List<String> classpathFiles = project.getTestClasspathElements();
+
+        URL[] urls = new URL[classpathFiles.size()];
+
+        for (int i = 0; i < classpathFiles.size(); ++i) {
+            final String artifact = classpathFiles.get(i);
+            getLog().debug("Testlol classpath artifact: " + artifact);
+            urls[i] = new File(artifact).toURI().toURL();
+        }
+
+        return new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
     }
 }
