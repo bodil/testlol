@@ -1,5 +1,5 @@
 /*
- * Envjs core-env.1.2.0.6 
+ * Envjs core-env.1.2.13
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -7,25 +7,26 @@
 
 var Envjs = function(){
     var i,
-        name
+        name,
         override = function(){
             for(i=0;i<arguments.length;i++){
                 for ( name in arguments[i] ) {
-                    var g = arguments[i].__lookupGetter__(name), 
+                    var g = arguments[i].__lookupGetter__(name),
                         s = arguments[i].__lookupSetter__(name);
                     if ( g || s ) {
-                        if ( g ) Envjs.__defineGetter__(name, g);
-                        if ( s ) Envjs.__defineSetter__(name, s);
-                    } else
+                        if ( g ) { Envjs.__defineGetter__(name, g); }
+                        if ( s ) { Envjs.__defineSetter__(name, s); }
+                    } else {
                         Envjs[name] = arguments[i][name];
+                    }
                 }
             }
         };
     if(arguments.length === 1 && typeof(arguments[0]) == 'string'){
         window.location = arguments[0];
     }else if (arguments.length === 1 && typeof(arguments[0]) == "object"){
-        override(arguments[0])
-    }else if(arguments.length === 2){
+        override(arguments[0]);
+    }else if(arguments.length === 2 && typeof(arguments[0]) == 'string'){
         override(arguments[1]);
         window.location = arguments[0];
     }
@@ -37,22 +38,39 @@ __this__ = this;
 Envjs.appCodeName  = "Envjs";
 
 //eg "Gecko/20070309 Firefox/2.0.0.3"
-Envjs.appName      = "Resig/20070309 PilotFish/1.2.0.6";
+Envjs.appName      = "Resig/20070309 PilotFish/1.2.13";
 
 Envjs.version = "1.6";//?
-
+Envjs.revision = '';
 /*
- * Envjs core-env.1.2.0.6 
+ * Envjs core-env.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
 
 
+
+/**
+ * @author john resig
+ */
+// Helper method for extending one object with another.
+function __extend__(a,b) {
+    for ( var i in b ) {
+        var g = b.__lookupGetter__(i), s = b.__lookupSetter__(i);
+        if ( g || s ) {
+            if ( g ) { a.__defineGetter__(i, g); }
+            if ( s ) { a.__defineSetter__(i, s); }
+        } else {
+            a[i] = b[i];
+        }
+    } return a;
+}
 
 /**
  * Writes message to system out
@@ -75,8 +93,9 @@ Envjs.NONE = 3;
  */
 Envjs.lineSource = function(e){};
 
+    
 /**
- * 
+ * TODO: used in ./event/eventtarget.js
  * @param {Object} event
  */
 Envjs.defaultEventBehaviors = {};
@@ -90,7 +109,7 @@ Envjs.scriptTypes = {
     "text/javascript"   :false,
     "text/envjs"        :true
 };
-    
+
 /**
  * will be called when loading a script throws an error
  * @param {Object} script
@@ -127,13 +146,13 @@ Envjs.eval = function(context, source, name){};
  */
 Envjs.loadLocalScript = function(script){
     //console.log("loading script %s", script);
-    var types, 
-        src, 
-        i, 
-        base,
-        filename,
-        xhr;
-    
+    var types,
+    src,
+    i,
+    base,
+    filename,
+    xhr;
+
     if(script.type){
         types = script.type.split(";");
         for(i=0;i<types.length;i++){
@@ -147,7 +166,7 @@ Envjs.loadLocalScript = function(script){
             }
         }
     }
-    
+
     try{
         //console.log('handling inline scripts');
         if(!script.src.length){
@@ -159,11 +178,11 @@ Envjs.loadLocalScript = function(script){
         Envjs.onScriptLoadError(script, e);
         return false;
     }
-        
-        
+
+
     //console.log("loading allowed external script %s", script.src);
-    
-    //lets you register a function to execute 
+
+    //lets you register a function to execute
     //before the script is loaded
     if(Envjs.beforeScriptLoad){
         for(src in Envjs.beforeScriptLoad){
@@ -176,7 +195,7 @@ Envjs.loadLocalScript = function(script){
     //filename = Envjs.uri(script.src.match(/([^\?#]*)/)[1], base );
     //console.log('loading script from base %s', base);
     filename = Envjs.uri(script.src, base);
-    try {          
+    try {
         xhr = new XMLHttpRequest();
         xhr.open("GET", filename, false/*syncronous*/);
         //console.log("loading external script %s", filename);
@@ -188,7 +207,7 @@ Envjs.loadLocalScript = function(script){
                     xhr.responseText,
                     filename
                 );
-            }    
+            }
         };
         xhr.send(null, false);
     } catch(e) {
@@ -196,7 +215,7 @@ Envjs.loadLocalScript = function(script){
         Envjs.onScriptLoadError(script, e);
         return false;
     }
-    //lets you register a function to execute 
+    //lets you register a function to execute
     //after the script is loaded
     if(Envjs.afterScriptLoad){
         for(src in Envjs.afterScriptLoad){
@@ -207,7 +226,502 @@ Envjs.loadLocalScript = function(script){
     }
     return true;
 };
+
+
+/**
+ * An 'image' was requested by the document.
+ *
+ * - During inital parse of a <link>
+ * - Via an innerHTML parse of a <link>
+ * - A modificiation of the 'src' attribute of an Image/HTMLImageElement
+ *
+ * NOTE: this is optional API.  If this doesn't exist then the default
+ * 'loaded' event occurs.
+ *
+ * @param node {Object} the <img> node
+ * @param node the src value
+ * @return 'true' to indicate the 'load' succeed, false otherwise
+ */
+Envjs.loadImage = function(node, src) {
+    return true;
+};
+
+
+/**
+ * A 'link'  was requested by the document.  Typically this occurs when:
+ * - During inital parse of a <link>
+ * - Via an innerHTML parse of a <link>
+ * - A modificiation of the 'href' attribute on a <link> node in the tree
+ *
+ * @param node {Object} is the link node in question
+ * @param href {String} is the href.
+ *
+ * Return 'true' to indicate that the 'load' was successful, or false
+ * otherwise.  The appropriate event is then triggered.
+ *
+ * NOTE: this is optional API.  If this doesn't exist then the default
+ *   'loaded' event occurs
+ */
+Envjs.loadLink = function(node, href) {
+    return true;
+};
+
+(function(){
+
+
+/*
+ *  cookie handling
+ *  Private internal helper class used to save/retreive cookies
+ */
+
+/**
+ * Specifies the location of the cookie file
+ */
+Envjs.cookieFile = function(){
+    return 'file://'+Envjs.homedir+'/.cookies';
+};
+
+/**
+ * saves cookies to a local file
+ * @param {Object} htmldoc
+ */
+Envjs.saveCookies = function(){
+    var cookiejson = JSON.stringify(Envjs.cookies.peristent,null,'\t');
+    //console.log('persisting cookies %s', cookiejson);
+    Envjs.writeToFile(cookiejson, Envjs.cookieFile());
+};
+
+/**
+ * loads cookies from a local file
+ * @param {Object} htmldoc
+ */
+Envjs.loadCookies = function(){
+    var cookiejson,
+        js;
+    try{
+        cookiejson = Envjs.readFromFile(Envjs.cookieFile())
+        js = JSON.parse(cookiejson, null, '\t');
+    }catch(e){
+        //console.log('failed to load cookies %s', e);
+        js = {};
+    }
+    return js;
+};
+
+Envjs.cookies = {
+    persistent:{
+        //domain - key on domain name {
+            //path - key on path {
+                //name - key on name {
+                     //value : cookie value
+                     //other cookie properties
+                //}
+            //}
+        //}
+        //expire - provides a timestamp for expiring the cookie
+        //cookie - the cookie!
+    },
+    temporary:{//transient is a reserved word :(
+        //like above
+    }
+};
+
+var __cookies__;
+
+//HTMLDocument cookie
+Envjs.setCookie = function(url, cookie){
+    var i,
+        index,
+        name,
+        value,
+        properties = {},
+        attr,
+        attrs;
+    url = Envjs.urlsplit(url);
+    if(cookie)
+        attrs = cookie.split(";");
+    else
+        return;
     
+    //for now the strategy is to simply create a json object
+    //and post it to a file in the .cookies.js file.  I hate parsing
+    //dates so I decided not to implement support for 'expires' 
+    //(which is deprecated) and instead focus on the easier 'max-age'
+    //(which succeeds 'expires') 
+    cookie = {};//keyword properties of the cookie
+    cookie['domain'] = url.hostname;
+    cookie['path'] = url.path||'/';
+    for(i=0;i<attrs.length;i++){
+        index = attrs[i].indexOf("=");
+        if(index > -1){
+            name = __trim__(attrs[i].slice(0,index));
+            value = __trim__(attrs[i].slice(index+1));
+            if(name=='max-age'){
+                //we'll have to when to check these
+                //and garbage collect expired cookies
+                cookie[name] = parseInt(value, 10);
+            } else if( name == 'domain' ){
+                if(__domainValid__(url, value)){
+                    cookie['domain'] = value;
+                }
+            } else if( name == 'path' ){
+                //not sure of any special logic for path
+                cookie['path'] = value;
+            } else {
+                //its not a cookie keyword so store it in our array of properties
+                //and we'll serialize individually in a moment
+                properties[name] = value;
+            }
+        }else{
+            if( attrs[i] == 'secure' ){
+                cookie[attrs[i]] = true;
+            }
+        }
+    }
+    if(!('max-age' in cookie)){
+        //it's a transient cookie so it only lasts as long as 
+        //the window.location remains the same (ie in-memory cookie)
+        __mergeCookie__(Envjs.cookies.temporary, cookie, properties);
+    }else{
+        //the cookie is persistent
+        __mergeCookie__(Envjs.cookies.persistent, cookie, properties);
+        Envjs.saveCookies();
+    }
+};
+
+function __domainValid__(url, value){
+    var i,
+        domainParts = url.hostname.split('.').reverse(),
+        newDomainParts = value.split('.').reverse();
+    if(newDomainParts.length > 1){
+        for(i=0;i<newDomainParts.length;i++){
+            if(!(newDomainParts[i] == domainParts[i])){
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
+};
+
+Envjs.getCookies = function(url){
+    //The cookies that are returned must belong to the same domain
+    //and be at or below the current window.location.path.  Also
+    //we must check to see if the cookie was set to 'secure' in which
+    //case we must check our current location.protocol to make sure it's
+    //https:
+    var persisted;
+    url = Envjs.urlsplit(url);
+    if(!__cookies__){
+        try{
+            __cookies__ = true;
+            try{
+                persisted = Envjs.loadCookies();
+            }catch(e){
+                //fail gracefully
+                //console.log('%s', e);
+            }   
+            if(persisted){
+                __extend__(Envjs.cookies.persistent, persisted);
+            }
+            //console.log('set cookies for doc %s', doc.baseURI);
+        }catch(e){
+            console.log('cookies not loaded %s', e)
+        };
+    }
+    var temporary = __cookieString__(Envjs.cookies.temporary, url),
+        persistent =  __cookieString__(Envjs.cookies.persistent, url);
+    //console.log('temporary cookies: %s', temporary);  
+    //console.log('persistent cookies: %s', persistent);  
+    return  temporary + persistent;
+};
+
+function __cookieString__(cookies, url) {
+    var cookieString = "",
+        domain, 
+        path,
+        name,
+        i=0;
+    for (domain in cookies) {
+        // check if the cookie is in the current domain (if domain is set)
+        // console.log('cookie domain %s', domain);
+        if (domain == "" || domain == url.hostname) {
+            for (path in cookies[domain]) {
+                // console.log('cookie domain path %s', path);
+                // make sure path is at or below the window location path
+                if (path == "/" || url.path.indexOf(path) > -1) {
+                    for (name in cookies[domain][path]) {
+                        // console.log('cookie domain path name %s', name);
+                        cookieString += 
+                            ((i++ > 0)?'; ':'') +
+                            name + "=" + 
+                            cookies[domain][path][name].value;
+                    }
+                }
+            }
+        }
+    }
+    return cookieString;
+};
+
+function __mergeCookie__(target, cookie, properties){
+    var name, now;
+    if(!target[cookie.domain]){
+        target[cookie.domain] = {};
+    }
+    if(!target[cookie.domain][cookie.path]){
+        target[cookie.domain][cookie.path] = {};
+    }
+    for(name in properties){
+        now = new Date().getTime();
+        target[cookie.domain][cookie.path][name] = {
+            "value":properties[name],
+            "secure":cookie.secure,
+            "max-age":cookie['max-age'],
+            "date-created":now,
+            "expiration":(cookie['max-age']===0) ? 
+                0 :
+                now + cookie['max-age']
+        };
+        //console.log('cookie is %o',target[cookie.domain][cookie.path][name]);
+    }
+};
+
+})();//end cookies
+/*
+    http://www.JSON.org/json2.js
+    2008-07-15
+
+    Public Domain.
+
+    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+
+    See http://www.JSON.org/js.html
+
+   
+    This code should be minified before deployment.
+    See http://javascript.crockford.com/jsmin.html
+
+    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+    NOT CONTROL.
+*/
+try{ JSON; }catch(e){ 
+JSON = function () {
+
+    function f(n) {
+        // Format integers to have at least two digits.
+        return n < 10 ? '0' + n : n;
+    }
+
+    Date.prototype.toJSON = function (key) {
+
+        return this.getUTCFullYear()   + '-' +
+             f(this.getUTCMonth() + 1) + '-' +
+             f(this.getUTCDate())      + 'T' +
+             f(this.getUTCHours())     + ':' +
+             f(this.getUTCMinutes())   + ':' +
+             f(this.getUTCSeconds())   + 'Z';
+    };
+
+    String.prototype.toJSON = function (key) {
+        return String(this);
+    };
+    Number.prototype.toJSON =
+    Boolean.prototype.toJSON = function (key) {
+        return this.valueOf();
+    };
+
+    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        escapeable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        gap,
+        indent,
+        meta = {    // table of character substitutions
+            '\b': '\\b',
+            '\t': '\\t',
+            '\n': '\\n',
+            '\f': '\\f',
+            '\r': '\\r',
+            '"' : '\\"',
+            '\\': '\\\\'
+        },
+        rep;
+
+
+    function quote(string) {
+        
+        escapeable.lastIndex = 0;
+        return escapeable.test(string) ?
+            '"' + string.replace(escapeable, function (a) {
+                var c = meta[a];
+                if (typeof c === 'string') {
+                    return c;
+                }
+                return '\\u' + ('0000' +
+                        (+(a.charCodeAt(0))).toString(16)).slice(-4);
+            }) + '"' :
+            '"' + string + '"';
+    }
+
+
+    function str(key, holder) {
+
+        var i,          // The loop counter.
+            k,          // The member key.
+            v,          // The member value.
+            length,
+            mind = gap,
+            partial,
+            value = holder[key];
+
+        if (value && typeof value === 'object' &&
+                typeof value.toJSON === 'function') {
+            value = value.toJSON(key);
+        }
+        if (typeof rep === 'function') {
+            value = rep.call(holder, key, value);
+        }
+
+        switch (typeof value) {
+        case 'string':
+            return quote(value);
+
+        case 'number':
+            return isFinite(value) ? String(value) : 'null';
+
+        case 'boolean':
+        case 'null':
+
+            return String(value);
+            
+        case 'object':
+
+            if (!value) {
+                return 'null';
+            }
+            gap += indent;
+            partial = [];
+
+            if (typeof value.length === 'number' &&
+                    !(value.propertyIsEnumerable('length'))) {
+
+                length = value.length;
+                for (i = 0; i < length; i += 1) {
+                    partial[i] = str(i, value) || 'null';
+                }
+                
+                v = partial.length === 0 ? '[]' :
+                    gap ? '[\n' + gap +
+                            partial.join(',\n' + gap) + '\n' +
+                                mind + ']' :
+                          '[' + partial.join(',') + ']';
+                gap = mind;
+                return v;
+            }
+
+            if (rep && typeof rep === 'object') {
+                length = rep.length;
+                for (i = 0; i < length; i += 1) {
+                    k = rep[i];
+                    if (typeof k === 'string') {
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            } else {
+
+                for (k in value) {
+                    if (Object.hasOwnProperty.call(value, k)) {
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            }
+
+            v = partial.length === 0 ? '{}' :
+                gap ? '{\n' + gap + partial.join(',\n' + gap) + '\n' +
+                        mind + '}' : '{' + partial.join(',') + '}';
+            gap = mind;
+            return v;
+        }
+    }
+
+    return {
+        stringify: function (value, replacer, space) {
+
+            var i;
+            gap = '';
+            indent = '';
+
+            if (typeof space === 'number') {
+                for (i = 0; i < space; i += 1) {
+                    indent += ' ';
+                }
+
+            } else if (typeof space === 'string') {
+                indent = space;
+            }
+
+            rep = replacer;
+            if (replacer && typeof replacer !== 'function' &&
+                    (typeof replacer !== 'object' ||
+                     typeof replacer.length !== 'number')) {
+                throw new Error('JSON.stringify');
+            }
+
+            return str('', {'': value});
+        },
+
+
+        parse: function (text, reviver) {
+            var j;
+            function walk(holder, key) {
+                var k, v, value = holder[key];
+                if (value && typeof value === 'object') {
+                    for (k in value) {
+                        if (Object.hasOwnProperty.call(value, k)) {
+                            v = walk(value, k);
+                            if (v !== undefined) {
+                                value[k] = v;
+                            } else {
+                                delete value[k];
+                            }
+                        }
+                    }
+                }
+                return reviver.call(holder, key, value);
+            }
+
+            cx.lastIndex = 0;
+            if (cx.test(text)) {
+                text = text.replace(cx, function (a) {
+                    return '\\u' + ('0000' +
+                            (+(a.charCodeAt(0))).toString(16)).slice(-4);
+                });
+            }
+
+
+            if (/^[\],:{}\s]*$/.
+test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@').
+replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']').
+replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+        
+                j = eval('(' + text + ')');
+
+                return typeof reviver === 'function' ?
+                    walk({'': j}, '') : j;
+            }
+
+            throw new SyntaxError('JSON.parse');
+        }
+    };
+}();
+
+}
+
 /**
  * synchronizes thread modifications
  * @param {Function} fn
@@ -219,21 +733,402 @@ Envjs.sync = function(fn){};
  * @param {Object} millseconds
  */
 Envjs.sleep = function(millseconds){};
-    
+
 /**
  * Interval to wait on event loop when nothing is happening
  */
 Envjs.WAIT_INTERVAL = 20;//milliseconds
 
+/*
+ * Copyright (c) 2010 Nick Galbreath
+ * http://code.google.com/p/stringencoders/source/browse/#svn/trunk/javascript
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/*
+ * url processing in the spirit of python's urlparse module
+ * see `pydoc urlparse` or
+ * http://docs.python.org/library/urlparse.html
+ *
+ *  urlsplit: break apart a URL into components
+ *  urlunsplit:  reconsistute a URL from componets
+ *  urljoin: join an absolute and another URL
+ *  urldefrag: remove the fragment from a URL
+ *
+ * Take a look at the tests in urlparse-test.html
+ *
+ * On URL Normalization:
+ *
+ * urlsplit only does minor normalization the components Only scheme
+ * and hostname are lowercased urljoin does a bit more, normalizing
+ * paths with "."  and "..".
+
+ * urlnormalize adds additional normalization
+ *
+ *   * removes default port numbers
+ *     http://abc.com:80/ -> http://abc.com/, etc
+ *   * normalizes path
+ *     http://abc.com -> http://abc.com/
+ *     and other "." and ".." cleanups
+ *   * if file, remove query and fragment
+ *
+ * It does not do:
+ *   * normalizes escaped hex values
+ *     http://abc.com/%7efoo -> http://abc.com/%7Efoo
+ *   * normalize '+' <--> '%20'
+ *
+ * Differences with Python
+ *
+ * The javascript urlsplit returns a normal object with the following
+ * properties: scheme, netloc, hostname, port, path, query, fragment.
+ * All properties are read-write.
+ *
+ * In python, the resulting object is not a dict, but a specialized,
+ * read-only, and has alternative tuple interface (e.g. obj[0] ==
+ * obj.scheme).  It's not clear why such a simple function requires
+ * a unique datastructure.
+ *
+ * urlunsplit in javascript takes an duck-typed object,
+ *  { scheme: 'http', netloc: 'abc.com', ...}
+ *  while in  * python it takes a list-like object.
+ *  ['http', 'abc.com'... ]
+ *
+ * For all functions, the javascript version use
+ * hostname+port if netloc is missing.  In python
+ * hostname+port were always ignored.
+ *
+ * Similar functionality in different languages:
+ *
+ *   http://php.net/manual/en/function.parse-url.php
+ *   returns assocative array but cannot handle relative URL
+ *
+ * TODO: test allowfragments more
+ * TODO: test netloc missing, but hostname present
+ */
+
+var urlparse = {};
+
+// Unlike to be useful standalone
+//
+// NORMALIZE PATH with "../" and "./"
+//   http://en.wikipedia.org/wiki/URL_normalization
+//   http://tools.ietf.org/html/rfc3986#section-5.2.3
+//
+urlparse.normalizepath = function(path)
+{
+    if (!path || path === '/') {
+        return '/';
+    }
+
+    var parts = path.split('/');
+
+    var newparts = [];
+    // make sure path always starts with '/'
+    if (parts[0]) {
+        newparts.push('');
+    }
+
+    for (var i = 0; i < parts.length; ++i) {
+        if (parts[i] === '..') {
+            if (newparts.length > 1) {
+                newparts.pop();
+            } else {
+                newparts.push(parts[i]);
+            }
+        } else if (parts[i] != '.') {
+            newparts.push(parts[i]);
+        }
+    }
+
+    path = newparts.join('/');
+    if (!path) {
+        path = '/';
+    }
+    return path;
+};
+
+//
+// Does many of the normalizations that the stock
+//  python urlsplit/urlunsplit/urljoin neglects
+//
+// Doesn't do hex-escape normalization on path or query
+//   %7e -> %7E
+// Nor, '+' <--> %20 translation
+//
+urlparse.urlnormalize = function(url)
+{
+    var parts = urlparse.urlsplit(url);
+    switch (parts.scheme) {
+    case 'file':
+        // files can't have query strings
+        //  and we don't bother with fragments
+        parts.query = '';
+        parts.fragment = '';
+        break;
+    case 'http':
+    case 'https':
+        // remove default port
+        if ((parts.scheme === 'http' && parts.port == 80) ||
+            (parts.scheme === 'https' && parts.port == 443)) {
+            parts.port = null;
+            // hostname is already lower case
+            parts.netloc = parts.hostname;
+        }
+        break;
+    default:
+        // if we don't have specific normalizations for this
+        // scheme, return the original url unmolested
+        return url;
+    }
+
+    // for [file|http|https].  Not sure about other schemes
+    parts.path = urlparse.normalizepath(parts.path);
+
+    return urlparse.urlunsplit(parts);
+};
+
+urlparse.urldefrag = function(url)
+{
+    var idx = url.indexOf('#');
+    if (idx == -1) {
+        return [ url, '' ];
+    } else {
+        return [ url.substr(0,idx), url.substr(idx+1) ];
+    }
+};
+
+urlparse.urlsplit = function(url, default_scheme, allow_fragments)
+{
+    var leftover;
+
+    if (typeof allow_fragments === 'undefined') {
+        allow_fragments = true;
+    }
+
+    // scheme (optional), host, port
+    var fullurl = /^([A-Za-z]+)?(:?\/\/)([0-9.\-A-Za-z]*)(?::(\d+))?(.*)$/;
+    // path, query, fragment
+    var parse_leftovers = /([^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/;
+
+    var o = {};
+
+    var parts = url.match(fullurl);
+    if (parts) {
+        o.scheme = parts[1] || default_scheme || '';
+        o.hostname = parts[3].toLowerCase() || '';
+        o.port = parseInt(parts[4],10) || '';
+        // Probably should grab the netloc from regexp
+        //  and then parse again for hostname/port
+
+        o.netloc = parts[3];
+        if (parts[4]) {
+            o.netloc += ':' + parts[4];
+        }
+
+        leftover = parts[5];
+    } else {
+        o.scheme = default_scheme || '';
+        o.netloc = '';
+        o.hostname = '';
+        leftover = url;
+    }
+    o.scheme = o.scheme.toLowerCase();
+
+    parts = leftover.match(parse_leftovers);
+
+    o.path =  parts[1] || '';
+    o.query = parts[2] || '';
+
+    if (allow_fragments) {
+        o.fragment = parts[3] || '';
+    } else {
+        o.fragment = '';
+    }
+
+    return o;
+};
+
+urlparse.urlunsplit = function(o) {
+    var s = '';
+    if (o.scheme) {
+        s += o.scheme + '://';
+    }
+
+    if (o.netloc) {
+        if (s == '') {
+            s += '//';
+        }
+        s +=  o.netloc;
+    } else if (o.hostname) {
+        // extension.  Python only uses netloc
+        if (s == '') {
+            s += '//';
+        }
+        s += o.hostname;
+        if (o.port) {
+            s += ':' + o.port;
+        }
+    }
+
+    if (o.path) {
+        s += o.path;
+    }
+
+    if (o.query) {
+        s += '?' + o.query;
+    }
+    if (o.fragment) {
+        s += '#' + o.fragment;
+    }
+    return s;
+};
+
+urlparse.urljoin = function(base, url, allow_fragments)
+{
+    if (typeof allow_fragments === 'undefined') {
+        allow_fragments = true;
+    }
+
+    var url_parts = urlparse.urlsplit(url);
+
+    // if url parts has a scheme (i.e. absolute)
+    // then nothing to do
+    if (url_parts.scheme) {
+        if (! allow_fragments) {
+            return url;
+        } else {
+            return urlparse.urldefrag(url)[0];
+        }
+    }
+    var base_parts = urlparse.urlsplit(base);
+
+    // copy base, only if not present
+    if (!base_parts.scheme) {
+        base_parts.scheme = url_parts.scheme;
+    }
+
+    // copy netloc, only if not present
+    if (!base_parts.netloc || !base_parts.hostname) {
+        base_parts.netloc = url_parts.netloc;
+        base_parts.hostname = url_parts.hostname;
+        base_parts.port = url_parts.port;
+    }
+
+    // paths
+    if (url_parts.path.length > 0) {
+        if (url_parts.path.charAt(0) == '/') {
+            base_parts.path = url_parts.path;
+        } else {
+            // relative path.. get rid of "current filename" and
+            //   replace.  Same as var parts =
+            //   base_parts.path.split('/'); parts[parts.length-1] =
+            //   url_parts.path; base_parts.path = parts.join('/');
+            var idx = base_parts.path.lastIndexOf('/');
+            if (idx == -1) {
+                base_parts.path = url_parts.path;
+            } else {
+                base_parts.path = base_parts.path.substr(0,idx) + '/' +
+                    url_parts.path;
+            }
+        }
+    }
+
+    // clean up path
+    base_parts.path = urlparse.normalizepath(base_parts.path);
+
+    // copy query string
+    base_parts.query = url_parts.query;
+
+    // copy fragments
+    if (allow_fragments) {
+        base_parts.fragment = url_parts.fragment;
+    } else {
+        base_parts.fragment = '';
+    }
+
+    return urlparse.urlunsplit(base_parts);
+};
 
 /**
- * resolves location relative to base or window location
- * @param {Object} path
- * @param {Object} base
+ * getcwd - named after posix call of same name (see 'man 2 getcwd')
+ *
  */
-Envjs.uri = function(path, base){};
-    
-    
+Envjs.getcwd = function() {
+    return '.';
+};
+
+/**
+ * resolves location relative to doc location
+ *
+ * @param {Object} path  Relative or absolute URL
+ * @param {Object} base  (semi-optional)  The base url used in resolving "path" above
+ */
+Envjs.uri = function(path, base) {
+    //console.log('constructing uri from path %s and base %s', path, base);
+
+    // Semi-common trick is to make an iframe with src='javascript:false'
+    //  (or some equivalent).  By returning '', the load is skipped
+    if (path.indexOf('javascript') === 0) {
+        return '';
+    }
+
+    // if path is absolute, then just normalize and return
+    if (path.match('^[a-zA-Z]+://')) {
+        return urlparse.urlnormalize(path);
+    }
+
+    // interesting special case, a few very large websites use
+    // '//foo/bar/' to mean 'http://foo/bar'
+    if (path.match('^//')) {
+        path = 'http:' + path;
+    }
+
+    // if base not passed in, try to get it from document
+    // Ideally I would like the caller to pass in document.baseURI to
+    //  make this more self-sufficient and testable
+    if (!base && document) {
+        base = document.baseURI;
+    }
+
+    // about:blank doesn't count
+    if (base === 'about:blank'){
+        base = '';
+    }
+
+    // if base is still empty, then we are in QA mode loading local
+    // files.  Get current working directory
+    if (!base) {
+        base = 'file://' +  Envjs.getcwd() + '/';
+    }
+    // handles all cases if path is abosulte or relative to base
+    // 3rd arg is "false" --> remove fragments
+    var newurl = urlparse.urlnormalize(urlparse.urljoin(base, path, false));
+
+    return newurl;
+};
+
+
+
 /**
  * Used in the XMLHttpRquest implementation to run a
  * request in a seperate thread
@@ -258,6 +1153,12 @@ Envjs.writeToFile = function(text, url){};
 Envjs.writeToTempFile = function(text, suffix){};
 
 /**
+ * Used to read the contents of a local file
+ * @param {Object} url
+ */
+Envjs.readFromFile = function(url){};
+
+/**
  * Used to delete a local file
  * @param {Object} url
  */
@@ -272,8 +1173,8 @@ Envjs.deleteFile = function(url){};
 Envjs.connection = function(xhr, responseHandler, data){};
 
 
-    
-    
+__extend__(Envjs, urlparse);
+
 /**
  * Makes an object window-like by proxying object accessors
  * @param {Object} scope
@@ -281,17 +1182,18 @@ Envjs.connection = function(xhr, responseHandler, data){};
  */
 Envjs.proxy = function(scope, parent, aliasList){};
 
-Envjs.javaEnabled = false;   
+Envjs.javaEnabled = false;
 
-Envjs.tmpdir         = ''; 
-Envjs.os_name        = ''; 
-Envjs.os_arch        = ''; 
-Envjs.os_version     = ''; 
-Envjs.lang           = ''; 
-Envjs.platform       = '';//how do we get the version
-    
+Envjs.homedir        = '';
+Envjs.tmpdir         = '';
+Envjs.os_name        = '';
+Envjs.os_arch        = '';
+Envjs.os_version     = '';
+Envjs.lang           = '';
+Envjs.platform       = '';
+
 /**
- * 
+ *
  * @param {Object} frameElement
  * @param {Object} url
  */
@@ -299,15 +1201,15 @@ Envjs.loadFrame = function(frame, url){
     try {
         if(frame.contentWindow){
             //mark for garbage collection
-            frame.contentWindow = null; 
+            frame.contentWindow = null;
         }
-        
+
         //create a new scope for the window proxy
         //platforms will need to override this function
         //to make sure the scope is global-like
         frame.contentWindow = (function(){return this;})();
         new Window(frame.contentWindow, window);
-        
+
         //I dont think frames load asynchronously in firefox
         //and I think the tests have verified this but for
         //some reason I'm less than confident... Are there cases?
@@ -322,16 +1224,21 @@ Envjs.loadFrame = function(frame, url){
     }
 };
 
+
+// The following are in rhino/window.js
+// TODO: Envjs.unloadFrame
+// TODO: Envjs.proxy
+
 /**
  * @author john resig & the envjs team
  * @uri http://www.envjs.com/
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 /*
- * Envjs rhino-env.1.2.0.6 
+ * Envjs rhino-env.1.2.13
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -341,13 +1248,15 @@ var __context__ = Packages.org.mozilla.javascript.Context.getCurrentContext();
 
 Envjs.platform       = "Rhino";
 Envjs.revision       = "1.7.0.rc2";
+
 /*
- * Envjs rhino-env.1.2.0.6 
+ * Envjs rhino-env.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
@@ -357,24 +1266,33 @@ Envjs.revision       = "1.7.0.rc2";
 /**
  * @author john resig
  */
-// Helper method for extending one object with another.  
+// Helper method for extending one object with another.
 function __extend__(a,b) {
     for ( var i in b ) {
         var g = b.__lookupGetter__(i), s = b.__lookupSetter__(i);
         if ( g || s ) {
-            if ( g ) a.__defineGetter__(i, g);
-            if ( s ) a.__defineSetter__(i, s);
-        } else
+            if ( g ) { a.__defineGetter__(i, g); }
+            if ( s ) { a.__defineSetter__(i, s); }
+        } else {
             a[i] = b[i];
+        }
     } return a;
-};
+}
+
 /**
- * Writes message to system out
+ * Writes message to system out.
+ *
+ * Some sites redefine 'print' as in 'window.print', so instead of
+ * printing to stdout, you are popping open a new window, which might
+ * call print, etc, etc,etc This can cause infinite loops and can
+ * exhausing all memory.
+ *
+ * By defining this upfront now, Envjs.log will always call the native 'print'
+ * function
+ *
  * @param {Object} message
  */
-Envjs.log = function(message){
-    print(message);
-};
+Envjs.log = print;
 
 Envjs.lineSource = function(e){
     return e&&e.rhinoException?e.rhinoException.lineSource():"(line ?)";
@@ -397,7 +1315,7 @@ Envjs.loadInlineScript = function(script){
             'eval('+script.text.substring(0,16)+'...):'+new Date().getTime()
         );
     }
-    //console.log('evaluated at scope %s \n%s', 
+    //console.log('evaluated at scope %s \n%s',
     //    script.ownerDocument.ownerWindow.guid, script.text);
 };
 
@@ -410,12 +1328,12 @@ Envjs.eval = function(context, source, name){
         0,
         null
     );
-}
+};
 
 //Temporary patch for parser module
 Packages.org.mozilla.javascript.Context.
     getCurrentContext().setOptimizationLevel(-1);
-    
+
 /**
  * Rhino provides a very succinct 'sync'
  * @param {Function} fn
@@ -423,14 +1341,15 @@ Packages.org.mozilla.javascript.Context.
 try{
     Envjs.sync = sync;
     Envjs.spawn = spawn;
-}catch(e){
-    //sync unavailable on AppEngine 
+} catch(e){
+    //sync unavailable on AppEngine
     Envjs.sync = function(fn){
-        console.log('Threadless platform, sync is safe');
+        //console.log('Threadless platform, sync is safe');
         return fn;
     };
+
     Envjs.spawn = function(fn){
-        console.log('Threadless platform, spawn shares main thread.');
+        //console.log('Threadless platform, spawn shares main thread.');
         return fn();
     };
 }
@@ -465,70 +1384,15 @@ Envjs.onExit = function(callback){
     contextFactory.addListener(listener);
 };
 
-
 /**
- * resolves location relative to doc location
- * @param {Object} path
- * @param {Object} path
- * @param {Object} base
+ * Get 'Current Working Directory'
  */
-Envjs.uri = function(path, base){
-    //console.log('constructing uri from path %s and base %s', path, base);
-    var protocol = new RegExp('(^file\:|^http\:|^https\:)'),
-        m = protocol.exec(path),
-        baseURI, absolutepath;
-    if(m&&m.length>1){
-        return (new java.net.URL(path).toString()+'')
-            .replace('file:/', 'file:///');
-    }else if(base){
-        baseURI = base.substring(0, base.lastIndexOf('/'));
-        if(baseURI.length > 0){
-            absolutepath = baseURI + '/' + path;
-        }else{
-            absolutepath = (new java.net.URL(new java.net.URL(base), path)+'')
-                .replace('file:/', 'file:///');
-        }
-        //console.log('constructed absolute path %s', absolutepath);
-        return absolutepath;
-    }else{
-        //return an absolute url from a url relative to the window location
-        //TODO: window should not be inlined here. this should be passed as a 
-        //      parameter to Envjs.location :DONE
-        if(document){
-            baseURI = document.baseURI;
-            if(baseURI == 'about:blank'){
-                //console.log('about:blank change: baseURI %s', document.baseURI);
-                baseURI = (java.io.File(path).toURL().toString()+'')
-                        .replace('file:/', 'file:///');
-                //console.log('baseURI %s', baseURI);
-                return baseURI;
-            }else{
-                if(path.match(/^\//)){
-                    //absolute path change
-                    //console.log('absolute path change: baseURI %s', document.baseURI);
-                    absolutepath = (new Location(baseURI)).pathname;
-                    return baseURI.substring(0, baseURI.lastIndexOf(absolutepath)) + path;
-                }else{
-                    //relative path change
-                    //console.log('relative path change: baseURI %s', document.baseURI);
-                    base = baseURI.substring(0, baseURI.lastIndexOf('/'));
-                    if(base.length > 0){
-                        return base + '/' + path;
-                    }else{
-                        return (new java.io.File(path).toURL().toString()+'')
-                            .replace('file:/', 'file:///');
-                    }
-                }
-            }
-        }else{
-            return (new java.io.File(path).toURL().toString()+'')
-                        .replace('file:/', 'file:///');
-        }
-    }
-};
+Envjs.getcwd = function() {
+    return java.lang.System.getProperty('user.dir');
+}
 
 /**
- * 
+ *
  * @param {Object} fn
  * @param {Object} onInterupt
  */
@@ -536,9 +1400,9 @@ Envjs.runAsync = function(fn, onInterupt){
     ////Envjs.debug("running async");
     var running = true,
         run;
-    
+
     try{
-        run = Envjs.sync(function(){ 
+        run = Envjs.sync(function(){
             fn();
             Envjs.wait();
         });
@@ -556,14 +1420,14 @@ Envjs.runAsync = function(fn, onInterupt){
  */
 Envjs.writeToFile = function(text, url){
     //Envjs.debug("writing text to url : " + url);
-    var out = new java.io.FileWriter( 
-        new java.io.File( 
-            new java.net.URI(url.toString()))); 
+    var out = new java.io.FileWriter(
+        new java.io.File(
+            new java.net.URI(url.toString())));
     out.write( text, 0, text.length );
     out.flush();
     out.close();
 };
-    
+
 /**
  * Used to write to a local file
  * @param {Object} text
@@ -583,6 +1447,28 @@ Envjs.writeToTempFile = function(text, suffix){
     out.close();
     return temp.getAbsolutePath().toString()+'';
 };
+
+
+/**
+ * Used to read the contents of a local file
+ * @param {Object} url
+ */
+Envjs.readFromFile = function( url ){
+    var fileReader = new java.io.FileReader(
+        new java.io.File( 
+            new java.net.URI( url )));
+            
+    var stringwriter = new java.io.StringWriter(),
+        buffer = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 1024),
+        length;
+
+    while ((length = fileReader.read(buffer, 0, 1024)) != -1) {
+        stringwriter.write(buffer, 0, length);
+    }
+
+    stringwriter.close();
+    return stringwriter.toString()+"";
+};
     
 
 /**
@@ -593,7 +1479,7 @@ Envjs.deleteFile = function(url){
     var file = new java.io.File( new java.net.URI( url ) );
     file["delete"]();
 };
-    
+
 /**
  * establishes connection and calls responsehandler
  * @param {Object} xhr
@@ -602,19 +1488,37 @@ Envjs.deleteFile = function(url){
  */
 Envjs.connection = function(xhr, responseHandler, data){
     var url = java.net.URL(xhr.url),
-        connection;
+        connection,
+        header,
+        outstream,
+        buffer,
+        length,
+        binary = false,
+        name, value,
+        contentEncoding,
+        instream,
+        responseXML,
+        i;
     if ( /^file\:/.test(url) ) {
         try{
-            if ( xhr.method == "PUT" ) {
-                var text =  data || "" ;
-                Envjs.writeToFile(text, url);
+            if ( "PUT" == xhr.method || "POST" == xhr.method ) {
+                data =  data || "" ;
+                Envjs.writeToFile(data, url);
+                xhr.readyState = 4;
+                //could be improved, I just cant recall the correct http codes
+                xhr.status = 200;
+                xhr.statusText = "";
             } else if ( xhr.method == "DELETE" ) {
                 Envjs.deleteFile(url);
+                xhr.readyState = 4;
+                //could be improved, I just cant recall the correct http codes
+                xhr.status = 200;
+                xhr.statusText = "";
             } else {
                 connection = url.openConnection();
                 connection.connect();
                 //try to add some canned headers that make sense
-                
+
                 try{
                     if(xhr.url.match(/html$/)){
                         xhr.responseHeaders["Content-Type"] = 'text/html';
@@ -627,9 +1531,9 @@ Envjs.connection = function(xhr, responseHandler, data){
                     }else{
                         xhr.responseHeaders["Content-Type"] = 'text/plain';
                     }
-                //xhr.responseHeaders['Last-Modified'] = connection.getLastModified();
-                //xhr.responseHeaders['Content-Length'] = headerValue+'';
-                //xhr.responseHeaders['Date'] = new Date()+'';*/
+                    //xhr.responseHeaders['Last-Modified'] = connection.getLastModified();
+                    //xhr.responseHeaders['Content-Length'] = headerValue+'';
+                    //xhr.responseHeaders['Date'] = new Date()+'';*/
                 }catch(e){
                     console.log('failed to load response headers',e);
                 }
@@ -641,94 +1545,102 @@ Envjs.connection = function(xhr, responseHandler, data){
             xhr.statusText = "Local File Protocol Error";
             xhr.responseText = "<html><head/><body><p>"+ e+ "</p></body></html>";
         }
-    } else { 
+    } else {
         connection = url.openConnection();
         connection.setRequestMethod( xhr.method );
-        
+
         // Add headers to Java connection
-        for (var header in xhr.headers){
+        for (header in xhr.headers){
             connection.addRequestProperty(header+'', xhr.headers[header]+'');
         }
-        
+
         //write data to output stream if required
         if(data){
             if(data instanceof Document){
-             if ( xhr.method == "PUT" || xhr.method == "POST" ) {
-                connection.setDoOutput(true);
-                var outstream = connection.getOutputStream(),
-                    xml = (new XMLSerializer()).serializeToString(data),
-                    outbuffer = new java.lang.String(xml).getBytes('UTF-8');
-                
-                outstream.write(outbuffer, 0, outbuffer.length);
-                outstream.close();
+                if ( xhr.method == "PUT" || xhr.method == "POST" ) {
+                    connection.setDoOutput(true);
+                    outstream = connection.getOutputStream(),
+                    xml = (new XMLSerializer()).serializeToString(data);
+                    buffer = new java.lang.String(xml).getBytes('UTF-8');
+                    outstream.write(buffer, 0, buffer.length);
+                    outstream.close();
                 }
             }else if(data.length&&data.length>0){
                 if ( xhr.method == "PUT" || xhr.method == "POST" ) {
                     connection.setDoOutput(true);
-                    var outstream = connection.getOutputStream(),
-                        outbuffer = new java.lang.String(data).getBytes('UTF-8');
-                    
-                    outstream.write(outbuffer, 0, outbuffer.length);
+                    outstream = connection.getOutputStream();
+                    buffer = new java.lang.String(data).getBytes('UTF-8');
+                    outstream.write(buffer, 0, buffer.length);
                     outstream.close();
                 }
-            }else
-                connection.connect();
+            }
+            connection.connect();
         }else{
             connection.connect();
         }
     }
-    
+
     if(connection){
         try{
-            var respheadlength = connection.getHeaderFields().size();
+            length = connection.getHeaderFields().size();
             // Stick the response headers into responseHeaders
-            for (var i = 0; i < respheadlength; i++) { 
-                var headerName = connection.getHeaderFieldKey(i); 
-                var headerValue = connection.getHeaderField(i); 
-                if (headerName)
-                    xhr.responseHeaders[headerName+''] = headerValue+'';
+            for (i = 0; i < length; i++) {
+                name = connection.getHeaderFieldKey(i);
+                value = connection.getHeaderField(i);
+                if (name)
+                    xhr.responseHeaders[name+''] = value+'';
             }
         }catch(e){
             console.log('failed to load response headers \n%s',e);
         }
-        
+
         xhr.readyState = 4;
         xhr.status = parseInt(connection.responseCode,10) || undefined;
         xhr.statusText = connection.responseMessage || "";
-        
-        var contentEncoding = connection.getContentEncoding() || "utf-8",
-            baos = new java.io.ByteArrayOutputStream(),
-            buffer = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 1024),
-            length,
-            stream = null,
-            responseXML = null;
 
+        contentEncoding = connection.getContentEncoding() || "utf-8";
+        instream = null;
+        responseXML = null;
+        
         try{
-            stream = (contentEncoding.equalsIgnoreCase("gzip") || 
-                      contentEncoding.equalsIgnoreCase("decompress") )?
-                new java.util.zip.GZIPInputStream(connection.getInputStream()) :
-                connection.getInputStream();
+            //console.log('contentEncoding %s', contentEncoding);
+            if( contentEncoding.equalsIgnoreCase("gzip") ||
+                contentEncoding.equalsIgnoreCase("decompress")){
+                //zipped content
+                binary = true;
+                outstream = new java.io.ByteArrayOutputStream();
+                buffer = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 1024);
+                instream = new java.util.zip.GZIPInputStream(connection.getInputStream())
+            }else{
+                //this is a text file
+                outstream = new java.io.StringWriter();
+                buffer = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 1024);
+                instream = new java.io.InputStreamReader(connection.getInputStream());
+            }
         }catch(e){
             if (connection.getResponseCode() == 404){
                 console.log('failed to open connection stream \n %s %s',
-                          e.toString(), e);
+                            e.toString(), e);
             }else{
                 console.log('failed to open connection stream \n %s %s',
-                           e.toString(), e);
+                            e.toString(), e);
             }
-            stream = connection.getErrorStream();
+            instream = connection.getErrorStream();
         }
+
+        while ((length = instream.read(buffer, 0, 1024)) != -1) {
+            outstream.write(buffer, 0, length);
+        }
+
+        outstream.close();
+        instream.close();
         
-        while ((length = stream.read(buffer)) != -1) {
-            baos.write(buffer, 0, length);
+        if(binary){
+            xhr.responseText = new String(outstream.toByteArray(), 'UTF-8') + '';
+        }else{
+            xhr.responseText = outstream.toString() + '';
         }
 
-        baos.close();
-        stream.close();
-
-        xhr.responseText = java.nio.charset.Charset.forName("UTF-8").
-            decode(java.nio.ByteBuffer.wrap(baos.toByteArray())).toString()+"";
-            
     }
     if(responseHandler){
         //Envjs.debug('calling ajax response handler');
@@ -739,17 +1651,18 @@ Envjs.connection = function(xhr, responseHandler, data){
 //Since we're running in rhino I guess we can safely assume
 //java is 'enabled'.  I'm sure this requires more thought
 //than I've given it here
-Envjs.javaEnabled = true;   
+Envjs.javaEnabled = true;
 
-Envjs.tmpdir         = java.lang.System.getProperty("java.io.tmpdir"); 
-Envjs.os_name        = java.lang.System.getProperty("os.name"); 
-Envjs.os_arch        = java.lang.System.getProperty("os.arch"); 
-Envjs.os_version     = java.lang.System.getProperty("os.version"); 
-Envjs.lang           = java.lang.System.getProperty("user.lang"); 
-    
+Envjs.homedir        = java.lang.System.getProperty("user.home");
+Envjs.tmpdir         = java.lang.System.getProperty("java.io.tmpdir");
+Envjs.os_name        = java.lang.System.getProperty("os.name");
+Envjs.os_arch        = java.lang.System.getProperty("os.arch");
+Envjs.os_version     = java.lang.System.getProperty("os.version");
+Envjs.lang           = java.lang.System.getProperty("user.lang");
+
 
 /**
- * 
+ *
  * @param {Object} frameElement
  * @param {Object} url
  */
@@ -757,13 +1670,13 @@ Envjs.loadFrame = function(frame, url){
     try {
         if(frame.contentWindow){
             //mark for garbage collection
-            frame.contentWindow = null; 
+            frame.contentWindow = null;
         }
-        
+
         //create a new scope for the window proxy
         frame.contentWindow = Envjs.proxy();
         new Window(frame.contentWindow, window);
-        
+
         //I dont think frames load asynchronously in firefox
         //and I think the tests have verified this but for
         //some reason I'm less than confident... Are there cases?
@@ -785,14 +1698,10 @@ Envjs.loadFrame = function(frame, url){
 Envjs.unloadFrame = function(frame){
     var all, length, i;
     try{
-        //clean up all the nodes
-        /*all = frame.contentDocument.all,
-        length = all.length;
-        for(i=0;i<length;i++){
-            all[i].removeEventListeners('*', null, null);
-            delete all.pop();
-        }*/
-        delete frame.contentDocument;
+        //TODO: probably self-referencing structures within a document tree
+        //preventing it from being entirely garbage collected once orphaned.
+        //Should have code to walk tree and break all links between contained
+        //objects.
         frame.contentDocument = null;
         if(frame.contentWindow){
             frame.contentWindow.close();
@@ -808,9 +1717,8 @@ Envjs.unloadFrame = function(frame){
  * @param {Object} scope
  * @param {Object} parent
  */
-Envjs.proxy = function(scope, parent){
-
-    try{   
+Envjs.proxy = function(scope, parent) {
+    try{
         if(scope+'' == '[object global]'){
             return scope
         }else{
@@ -819,7 +1727,7 @@ Envjs.proxy = function(scope, parent){
     }catch(e){
         console.log('failed to init standard objects %s %s \n%s', scope, parent, e);
     }
-    
+
 };
 
 /**
@@ -828,8 +1736,8 @@ Envjs.proxy = function(scope, parent){
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 
 /**
  * @author envjs team
@@ -838,12 +1746,13 @@ var Console,
     console;
 
 /*
- * Envjs console.1.2.0.6 
+ * Envjs console.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
@@ -853,13 +1762,15 @@ var Console,
 /**
  * @author envjs team
  * borrowed 99%-ish with love from firebug-lite
+ *
+ * http://wiki.commonjs.org/wiki/Console
  */
 Console = function(module){
     var $level,
-        $logger,
-        $null = function(){};
-    
-    
+    $logger,
+    $null = function(){};
+
+
     if(Envjs[module] && Envjs[module].loglevel){
         $level = Envjs.module.loglevel;
         $logger = {
@@ -879,7 +1790,7 @@ Console = function(module){
                 logFormatted(arguments, (module)+" error");
             }
         };
-    }else{
+    } else {
         $logger = {
             log: function(level){
                 logFormatted(arguments, "");
@@ -890,12 +1801,12 @@ Console = function(module){
             error: $null
         };
     }
-   
+
     return $logger;
-};       
+};
 
 console = new Console("console",1);
-    
+
 function logFormatted(objects, className)
 {
     var html = [];
@@ -918,21 +1829,23 @@ function logFormatted(objects, className)
             var object = objects[++objIndex];
             part.appender(object, html);
         }
-        else
+        else {
             appendText(part, html);
+	}
     }
 
     for (var i = objIndex+1; i < objects.length; ++i)
     {
         appendText(" ", html);
-        
+
         var object = objects[i];
-        if (typeof(object) == "string")
+        if (typeof(object) == "string") {
             appendText(object, html);
-        else
+        } else {
             appendObject(object, html);
+	}
     }
-    
+
     Envjs.log(html.join(' '));
 }
 
@@ -940,7 +1853,7 @@ function parseFormat(format)
 {
     var parts = [];
 
-    var reg = /((^%|[^\\]%)(\d+)?(\.)([a-zA-Z]))|((^%|[^\\]%)([a-zA-Z]))/;    
+    var reg = /((^%|[^\\]%)(\d+)?(\.)([a-zA-Z]))|((^%|[^\\]%)([a-zA-Z]))/;
     var appenderMap = {s: appendText, d: appendInteger, i: appendInteger, f: appendFloat};
 
     for (var m = reg.exec(format); m; m = reg.exec(format))
@@ -962,7 +1875,7 @@ function parseFormat(format)
 
 function escapeHTML(value)
 {
-   return value;
+    return value;
 }
 
 function objectToString(object)
@@ -1016,46 +1929,48 @@ function appendObject(object, html)
 {
     try
     {
-        if (object == undefined)
+        if (object == undefined) {
             appendNull("undefined", html);
-        else if (object == null)
+        } else if (object == null) {
             appendNull("null", html);
-        else if (typeof object == "string")
+        } else if (typeof object == "string") {
             appendString(object, html);
-        else if (typeof object == "number")
+	} else if (typeof object == "number") {
             appendInteger(object, html);
-        else if (typeof object == "function")
+	} else if (typeof object == "function") {
             appendFunction(object, html);
-        else if (object.nodeType == 1)
+        } else if (object.nodeType == 1) {
             appendSelector(object, html);
-        else if (typeof object == "object")
+        } else if (typeof object == "object") {
             appendObjectFormatted(object, html);
-        else
+        } else {
             appendText(object, html);
+	}
     }
     catch (exc)
     {
     }
 }
-    
+
 function appendObjectFormatted(object, html)
 {
     var text = objectToString(object);
     var reObject = /\[object (.*?)\]/;
 
     var m = reObject.exec(text);
-    html.push( m ? m[1] : text)
+    html.push( m ? m[1] : text);
 }
 
 function appendSelector(object, html)
 {
 
     html.push(escapeHTML(object.nodeName.toLowerCase()));
-    if (object.id)
+    if (object.id) {
         html.push(escapeHTML(object.id));
-    if (object.className)
+    }
+    if (object.className) {
         html.push(escapeHTML(object.className));
-
+    }
 }
 
 function appendNode(node, html)
@@ -1067,26 +1982,27 @@ function appendNode(node, html)
         for (var i = 0; i < node.attributes.length; ++i)
         {
             var attr = node.attributes[i];
-            if (!attr.specified)
+            if (!attr.specified) {
                 continue;
-            
-            html.push( attr.nodeName.toLowerCase(),escapeHTML(attr.nodeValue))
+	    }
+
+            html.push( attr.nodeName.toLowerCase(),escapeHTML(attr.nodeValue));
         }
 
         if (node.firstChild)
         {
-            for (var child = node.firstChild; child; child = child.nextSibling)
+            for (var child = node.firstChild; child; child = child.nextSibling) {
                 appendNode(child, html);
-                
+	    }
+
             html.push( node.nodeName.toLowerCase());
         }
     }
-    else if (node.nodeType == 3)
+    else if (node.nodeType === 3)
     {
         html.push(escapeHTML(node.nodeValue));
     }
 };
-
 
 /**
  * @author john resig & the envjs team
@@ -1094,10 +2010,10 @@ function appendNode(node, html)
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 /*
- * Envjs dom.1.2.0.6 
+ * Envjs dom.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -1137,12 +2053,13 @@ var Attr,
 
 
 /*
- * Envjs dom.1.2.0.6 
+ * Envjs dom.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
@@ -1152,17 +2069,19 @@ var Attr,
 /**
  * @author john resig
  */
-// Helper method for extending one object with another.  
+// Helper method for extending one object with another.
 function __extend__(a,b) {
     for ( var i in b ) {
         var g = b.__lookupGetter__(i), s = b.__lookupSetter__(i);
         if ( g || s ) {
-            if ( g ) a.__defineGetter__(i, g);
-            if ( s ) a.__defineSetter__(i, s);
-        } else
+            if ( g ) { a.__defineGetter__(i, g); }
+            if ( s ) { a.__defineSetter__(i, s); }
+        } else {
             a[i] = b[i];
+        }
     } return a;
-};
+}
+
 /**
  * @author john resig
  */
@@ -1172,9 +2091,10 @@ function __setArray__( target, array ) {
     // is a super-fast way to populate an object with array-like properties
     target.length = 0;
     Array.prototype.push.apply( target, array );
-};
+}
+
 /**
- * @class  NodeList - 
+ * @class  NodeList -
  *      provides the abstraction of an ordered collection of nodes
  *
  * @param  ownerDocument : Document - the ownerDocument
@@ -1192,8 +2112,8 @@ __extend__(NodeList.prototype, {
     item : function(index) {
         var ret = null;
         if ((index >= 0) && (index < this.length)) {
-            // bounds check 
-            ret = this[index];                    
+            // bounds check
+            ret = this[index];
         }
         // if the index is out of bounds, default value null is returned
         return ret;
@@ -1201,11 +2121,11 @@ __extend__(NodeList.prototype, {
     get xml() {
         var ret = "",
             i;
-        
+
         // create string containing the concatenation of the string values of each child
         for (i=0; i < this.length; i++) {
             if(this[i]){
-                if(this[i].nodeType == Node.TEXT_NODE && i>0 && 
+                if(this[i].nodeType == Node.TEXT_NODE && i>0 &&
                    this[i-1].nodeType == Node.TEXT_NODE){
                     //add a single space between adjacent text nodes
                     ret += " "+this[i].xml;
@@ -1231,17 +2151,17 @@ __extend__(NodeList.prototype, {
 
 
 /**
- * @method __findItemIndex__ 
+ * @method __findItemIndex__
  *      find the item index of the node
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  node : Node 
+ * @param  node : Node
  * @return : int
  */
 var __findItemIndex__ = function (nodelist, node) {
     var ret = -1, i;
     for (i=0; i<nodelist.length; i++) {
         // compare id to each node's _id
-        if (nodelist[i] === node) {            
+        if (nodelist[i] === node) {
             // found it!
             ret = i;
             break;
@@ -1252,18 +2172,18 @@ var __findItemIndex__ = function (nodelist, node) {
 };
 
 /**
- * @method __insertBefore__ 
+ * @method __insertBefore__
  *      insert the specified Node into the NodeList before the specified index
- *      Used by Node.insertBefore(). Note: Node.insertBefore() is responsible 
- *      for Node Pointer surgery __insertBefore__ simply modifies the internal 
+ *      Used by Node.insertBefore(). Note: Node.insertBefore() is responsible
+ *      for Node Pointer surgery __insertBefore__ simply modifies the internal
  *      data structure (Array).
  * @param  newChild      : Node - the Node to be inserted
  * @param  refChildIndex : int     - the array index to insert the Node before
  */
 var __insertBefore__ = function(nodelist, newChild, refChildIndex) {
-    if ((refChildIndex >= 0) && (refChildIndex <= nodelist.length)) { 
+    if ((refChildIndex >= 0) && (refChildIndex <= nodelist.length)) {
         // bounds check
-        if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {  
+        if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
             // node is a DocumentFragment
             // append the children of DocumentFragment
             Array.prototype.splice.apply(nodelist,
@@ -1279,8 +2199,8 @@ var __insertBefore__ = function(nodelist, newChild, refChildIndex) {
 /**
  * @method __replaceChild__
  *      replace the specified Node in the NodeList at the specified index
- *      Used by Node.replaceChild(). Note: Node.replaceChild() is responsible 
- *      for Node Pointer surgery __replaceChild__ simply modifies the internal 
+ *      Used by Node.replaceChild(). Note: Node.replaceChild() is responsible
+ *      for Node Pointer surgery __replaceChild__ simply modifies the internal
  *      data structure (Array).
  *
  * @param  newChild      : Node - the Node to be inserted
@@ -1288,60 +2208,60 @@ var __insertBefore__ = function(nodelist, newChild, refChildIndex) {
  */
 var __replaceChild__ = function(nodelist, newChild, refChildIndex) {
     var ret = null;
-    
+
     // bounds check
-    if ((refChildIndex >= 0) && (refChildIndex < nodelist.length)) { 
+    if ((refChildIndex >= 0) && (refChildIndex < nodelist.length)) {
         // preserve old child for return
-        ret = nodelist[refChildIndex];            
-    
-        if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {  
+        ret = nodelist[refChildIndex];
+
+        if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
             // node is a DocumentFragment
             // get array containing children prior to refChild
             Array.prototype.splice.apply(nodelist,
                 [refChildIndex, 1].concat(newChild.childNodes.toArray()));
         }
         else {
-            // simply replace node in array (links between Nodes are 
+            // simply replace node in array (links between Nodes are
             // made at higher level)
             nodelist[refChildIndex] = newChild;
         }
     }
     // return replaced node
-    return ret;                                   
+    return ret;
 };
 
 /**
- * @method __removeChild__ 
+ * @method __removeChild__
  *      remove the specified Node in the NodeList at the specified index
- *      Used by Node.removeChild(). Note: Node.removeChild() is responsible 
- *      for Node Pointer surgery __removeChild__ simply modifies the internal 
+ *      Used by Node.removeChild(). Note: Node.removeChild() is responsible
+ *      for Node Pointer surgery __removeChild__ simply modifies the internal
  *      data structure (Array).
  * @param  refChildIndex : int - the array index holding the Node to be removed
  */
 var __removeChild__ = function(nodelist, refChildIndex) {
     var ret = null;
-    
-    if (refChildIndex > -1) {                              
+
+    if (refChildIndex > -1) {
         // found it!
         // return removed node
-        ret = nodelist[refChildIndex];                    
-        
+        ret = nodelist[refChildIndex];
+
         // rebuild array without removed child
         Array.prototype.splice.apply(nodelist,[refChildIndex, 1]);
     }
     // return removed node
-    return ret;                                   
+    return ret;
 };
 
 /**
- * @method __appendChild__ 
- *      append the specified Node to the NodeList. Used by Node.appendChild(). 
+ * @method __appendChild__
+ *      append the specified Node to the NodeList. Used by Node.appendChild().
  *      Note: Node.appendChild() is responsible for Node Pointer surgery
  *      __appendChild__ simply modifies the internal data structure (Array).
  * @param  newChild      : Node - the Node to be inserted
  */
 var __appendChild__ = function(nodelist, newChild) {
-    if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {  
+    if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
         // node is a DocumentFragment
         // append the children of DocumentFragment
         Array.prototype.push.apply(nodelist, newChild.childNodes.toArray() );
@@ -1349,419 +2269,39 @@ var __appendChild__ = function(nodelist, newChild) {
         // simply add node to array (links between Nodes are made at higher level)
         Array.prototype.push.apply(nodelist, [newChild]);
     }
-    
+
 };
 
 /**
- * @method __cloneNodes__ - 
+ * @method __cloneNodes__ -
  *      Returns a NodeList containing clones of the Nodes in this NodeList
- * @param  deep : boolean - 
+ * @param  deep : boolean -
  *      If true, recursively clone the subtree under each of the nodes;
- *      if false, clone only the nodes themselves (and their attributes, 
+ *      if false, clone only the nodes themselves (and their attributes,
  *      if it is an Element).
  * @param  parentNode : Node - the new parent of the cloned NodeList
  * @return : NodeList - NodeList containing clones of the Nodes in this NodeList
  */
 var __cloneNodes__ = function(nodelist, deep, parentNode) {
     var cloneNodeList = new NodeList(nodelist.ownerDocument, parentNode);
-    
+
     // create list containing clones of each child
     for (var i=0; i < nodelist.length; i++) {
         __appendChild__(cloneNodeList, nodelist[i].cloneNode(deep));
     }
-    
+
     return cloneNodeList;
 };
 
-/**
- * @class  NamedNodeMap - 
- *      used to represent collections of nodes that can be accessed by name
- *      typically a set of Element attributes
- *
- * @extends NodeList - 
- *      note W3C spec says that this is not the case, but we need an item() 
- *      method identical to NodeList's, so why not?
- * @param  ownerDocument : Document - the ownerDocument
- * @param  parentNode    : Node - the node that the NamedNodeMap is attached to (or null)
- */
-NamedNodeMap = function(ownerDocument, parentNode) {
-    NodeList.apply(this, arguments);
-    __setArray__(this, []);
-};
-NamedNodeMap.prototype = new NodeList;
-__extend__(NamedNodeMap.prototype, {
-    add: function(name){
-        this[this.length] = name;
-    },
-    getNamedItem : function(name) {
-        var ret = null;
-        //console.log('NamedNodeMap getNamedItem %s', name);
-        // test that Named Node exists
-        var itemIndex = __findNamedItemIndex__(this, name);
-        
-        if (itemIndex > -1) { 
-            // found it!                         
-            ret = this[itemIndex];                
-        }
-        // if node is not found, default value null is returned
-        return ret;                                    
-    },
-    setNamedItem : function(arg) {
-      //console.log('setNamedItem %s', arg);
-      // test for exceptions
-      if (__ownerDocument__(this).implementation.errorChecking) {
-            // throw Exception if arg was not created by this Document
-            if (this.ownerDocument != arg.ownerDocument) {
-              throw(new DOMException(DOMException.WRONG_DOCUMENT_ERR));
-            }
-        
-            // throw Exception if DOMNamedNodeMap is readonly
-            if (this._readonly || (this.parentNode && this.parentNode._readonly)) {
-              throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
-            }
-        
-            // throw Exception if arg is already an attribute of another Element object
-            if (arg.ownerElement && (arg.ownerElement != this.parentNode)) {
-              throw(new DOMException(DOMException.INUSE_ATTRIBUTE_ERR));
-            }
-      }
-    
-     //console.log('setNamedItem __findNamedItemIndex__ ');
-      // get item index
-      var itemIndex = __findNamedItemIndex__(this, arg.name);
-      var ret = null;
-    
-     //console.log('setNamedItem __findNamedItemIndex__ %s', itemIndex);
-      if (itemIndex > -1) {                          // found it!
-            ret = this[itemIndex];                // use existing Attribute
-        
-            // throw Exception if DOMAttr is readonly
-            if (__ownerDocument__(this).implementation.errorChecking && ret._readonly) {
-              throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
-            } else {
-              this[itemIndex] = arg;                // over-write existing NamedNode
-              this[arg.name.toLowerCase()] = arg;
-            }
-      } else {
-            // add new NamedNode
-           //console.log('setNamedItem add new named node map (by index)');
-            Array.prototype.push.apply(this, [arg]);
-           //console.log('setNamedItem add new named node map (by name) %s %s', arg, arg.name);
-            this[arg.name] = arg;
-           //console.log('finsished setNamedItem add new named node map (by name) %s', arg.name);
-            
-      }
-    
-     //console.log('setNamedItem parentNode');
-      arg.ownerElement = this.parentNode;            // update ownerElement
-      // return old node or new node
-     //console.log('setNamedItem exit');
-      return ret;                                    
-    },
-    removeNamedItem : function(name) {
-          var ret = null;
-          // test for exceptions
-          // throw Exception if NamedNodeMap is readonly
-          if (__ownerDocument__(this).implementation.errorChecking && 
-                (this._readonly || (this.parentNode && this.parentNode._readonly))) {
-              throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
-          }
-        
-          // get item index
-          var itemIndex = __findNamedItemIndex__(this, name);
-        
-          // throw Exception if there is no node named name in this map
-          if (__ownerDocument__(this).implementation.errorChecking && (itemIndex < 0)) {
-            throw(new DOMException(DOMException.NOT_FOUND_ERR));
-          }
-        
-          // get Node
-          var oldNode = this[itemIndex];
-          //this[oldNode.name] = undefined;
-        
-          // throw Exception if Node is readonly
-          if (__ownerDocument__(this).implementation.errorChecking && oldNode._readonly) {
-            throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
-          }
-        
-          // return removed node
-          return __removeChild__(this, itemIndex);
-    },
-    getNamedItemNS : function(namespaceURI, localName) {
-        var ret = null;
-        
-        // test that Named Node exists
-        var itemIndex = __findNamedItemNSIndex__(this, namespaceURI, localName);
-        
-        if (itemIndex > -1) {
-            // found it! return NamedNode
-            ret = this[itemIndex];
-        }
-        // if node is not found, default value null is returned
-        return ret;                                    
-    },
-    setNamedItemNS : function(arg) {
-        //console.log('setNamedItemNS %s', arg);
-        // test for exceptions
-        if (__ownerDocument__(this).implementation.errorChecking) {
-            // throw Exception if NamedNodeMap is readonly
-            if (this._readonly || (this.parentNode && this.parentNode._readonly)) {
-                throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
-            }
-            
-            // throw Exception if arg was not created by this Document
-            if (__ownerDocument__(this) != __ownerDocument__(arg)) {
-                throw(new DOMException(DOMException.WRONG_DOCUMENT_ERR));
-            }
-            
-            // throw Exception if arg is already an attribute of another Element object
-            if (arg.ownerElement && (arg.ownerElement != this.parentNode)) {
-                throw(new DOMException(DOMException.INUSE_ATTRIBUTE_ERR));
-            }
-        }
-        
-        // get item index
-        var itemIndex = __findNamedItemNSIndex__(this, arg.namespaceURI, arg.localName);
-        var ret = null;
-        
-        if (itemIndex > -1) {
-            // found it!
-            // use existing Attribute
-            ret = this[itemIndex];
-            // throw Exception if Attr is readonly
-            if (__ownerDocument__(this).implementation.errorChecking && ret._readonly) {
-                throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
-            } else {
-                // over-write existing NamedNode
-                this[itemIndex] = arg;
-            }
-        }else {
-            // add new NamedNode
-            Array.prototype.push.apply(this, [arg]);
-        }
-        arg.ownerElement = this.parentNode;
-        
-        // return old node or null
-        return ret;
-        //console.log('finished setNamedItemNS %s', arg);
-    },
-    removeNamedItemNS : function(namespaceURI, localName) {
-          var ret = null;
-        
-          // test for exceptions
-          // throw Exception if NamedNodeMap is readonly
-          if (__ownerDocument__(this).implementation.errorChecking && (this._readonly || (this.parentNode && this.parentNode._readonly))) {
-            throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
-          }
-        
-          // get item index
-          var itemIndex = __findNamedItemNSIndex__(this, namespaceURI, localName);
-        
-          // throw Exception if there is no matching node in this map
-          if (__ownerDocument__(this).implementation.errorChecking && (itemIndex < 0)) {
-            throw(new DOMException(DOMException.NOT_FOUND_ERR));
-          }
-        
-          // get Node
-          var oldNode = this[itemIndex];
-        
-          // throw Exception if Node is readonly
-          if (__ownerDocument__(this).implementation.errorChecking && oldNode._readonly) {
-            throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
-          }
-        
-          return __removeChild__(this, itemIndex);             // return removed node
-    },
-    get xml() {
-          var ret = "";
-        
-          // create string containing concatenation of all (but last) Attribute string values (separated by spaces)
-          for (var i=0; i < this.length -1; i++) {
-            ret += this[i].xml +" ";
-          }
-        
-          // add last Attribute to string (without trailing space)
-          if (this.length > 0) {
-            ret += this[this.length -1].xml;
-          }
-        
-          return ret;
-    },
-    toString : function(){
-        return "[object NamedNodeMap]";
-    }
 
-});
-
-/**
- * @method __findNamedItemIndex__ 
- *      find the item index of the node with the specified name
- *
- * @param  name : string - the name of the required node
- * @param  isnsmap : if its a NamespaceNodeMap
- * @return : int
- */
-var __findNamedItemIndex__ = function(namednodemap, name, isnsmap) {
-    var ret = -1;
-    // loop through all nodes
-    for (var i=0; i<namednodemap.length; i++) {
-        // compare name to each node's nodeName
-        if(namednodemap[i].localName && name && isnsmap){
-            if (namednodemap[i].localName.toLowerCase() == name.toLowerCase()) {
-                // found it!         
-                ret = i;
-                break;
-            }
-        }else{
-            if(namednodemap[i].name && name){
-                if (namednodemap[i].name.toLowerCase() == name.toLowerCase()) {         
-                    // found it!
-                    ret = i;
-                    break;
-                }
-            }
-        }
-    }
-    // if node is not found, default value -1 is returned
-    return ret;                                    
+var __ownerDocument__ = function(node){
+    return (node.nodeType == Node.DOCUMENT_NODE)?node:node.ownerDocument;
 };
 
 /**
- * @method __findNamedItemNSIndex__ 
- *      find the item index of the node with the specified 
- *      namespaceURI and localName
- *
- * @param  namespaceURI : string - the namespace URI of the required node
- * @param  localName    : string - the local name of the required node
- * @return : int
- */
-var __findNamedItemNSIndex__ = function(namednodemap, namespaceURI, localName) {
-    var ret = -1;
-    // test that localName is not null
-    if (localName) {
-        // loop through all nodes
-        for (var i=0; i<namednodemap.length; i++) {
-            if(namednodemap[i].namespaceURI && namednodemap[i].localName){
-                // compare name to each node's namespaceURI and localName
-                if ((namednodemap[i].namespaceURI.toLowerCase() == namespaceURI.toLowerCase()) && 
-                    (namednodemap[i].localName.toLowerCase() == localName.toLowerCase())) {
-                    // found it!
-                    ret = i;                                 
-                    break;
-                }
-            }
-        }
-    }
-    // if node is not found, default value -1 is returned
-    return ret;                                    
-};
-
-/**
- * @method __hasAttribute__ 
- *      Returns true if specified node exists
- *
- * @param  name : string - the name of the required node
- * @return : boolean
- */
-var __hasAttribute__ = function(namednodemap, name) {
-    var ret = false;
-    // test that Named Node exists
-    var itemIndex = __findNamedItemIndex__(namednodemap, name);
-        if (itemIndex > -1) {                          
-        // found it!
-        ret = true;                                  
-    }
-    // if node is not found, default value false is returned
-    return ret;                                    
-}
-
-/**
- * @method __hasAttributeNS__ 
- *      Returns true if specified node exists
- *
- * @param  namespaceURI : string - the namespace URI of the required node
- * @param  localName    : string - the local name of the required node
- * @return : boolean
- */
-var __hasAttributeNS__ = function(namednodemap, namespaceURI, localName) {
-    var ret = false;
-    // test that Named Node exists
-    var itemIndex = __findNamedItemNSIndex__(namednodemap, namespaceURI, localName);
-    if (itemIndex > -1) {
-        // found it!
-        ret = true;
-    }
-    // if node is not found, default value false is returned
-    return ret;                                    
-}
-
-/**
- * @method __cloneNamedNodes__ 
- *      Returns a NamedNodeMap containing clones of the Nodes in this NamedNodeMap
- *
- * @param  parentNode : Node - the new parent of the cloned NodeList
- * @param  isnsmap : bool - is this a NamespaceNodeMap
- * @return NamedNodeMap containing clones of the Nodes in this NamedNodeMap
- */
-var __cloneNamedNodes__ = function(namednodemap, parentNode, isnsmap) {
-    var cloneNamedNodeMap = isnsmap?
-        new NamespaceNodeMap(namednodemap.ownerDocument, parentNode):
-        new NamedNodeMap(namednodemap.ownerDocument, parentNode);
-
-    // create list containing clones of all children
-    for (var i=0; i < namednodemap.length; i++) {
-        __appendChild__(cloneNamedNodeMap, namednodemap[i].cloneNode(false));
-    }
-    
-    return cloneNamedNodeMap;
-};
-
-
-/**
- * @class  NamespaceNodeMap - 
- *      used to represent collections of namespace nodes that can be 
- *      accessed by name typically a set of Element attributes
- *
- * @extends NamedNodeMap
- *
- * @param  ownerDocument : Document - the ownerDocument
- * @param  parentNode    : Node - the node that the NamespaceNodeMap is attached to (or null)
- */
-var NamespaceNodeMap = function(ownerDocument, parentNode) {
-    this.NamedNodeMap = NamedNodeMap;
-    this.NamedNodeMap(ownerDocument, parentNode);
-    __setArray__(this, []);
-};
-NamespaceNodeMap.prototype = new NamedNodeMap;
-__extend__(NamespaceNodeMap.prototype, {
-    get xml() {
-        var ret = "",
-            ns,
-            ind;
-        // identify namespaces declared local to this Element (ie, not inherited)
-        for (ind = 0; ind < this.length; ind++) {
-            // if namespace declaration does not exist in the containing node's, parentNode's namespaces
-            ns = null;
-            try {
-                var ns = this.parentNode.parentNode._namespaces.
-                    getNamedItem(this[ind].localName);
-            }catch (e) {
-                //breaking to prevent default namespace being inserted into return value
-                break;
-            }
-            if (!(ns && (""+ ns.nodeValue == ""+ this[ind].nodeValue))) {
-                // display the namespace declaration
-                ret += this[ind].xml +" ";
-            }
-        }
-        return ret;
-    }
-});
-
-/**
- * @class  Node - 
- *      The Node interface is the primary datatype for the entire 
- *      Document Object Model. It represents a single node in the 
+ * @class  Node -
+ *      The Node interface is the primary datatype for the entire
+ *      Document Object Model. It represents a single node in the
  *      document tree.
  * @param  ownerDocument : Document - The Document object associated with this node.
  */
@@ -1771,43 +2311,43 @@ Node = function(ownerDocument) {
     this.namespaceURI = null;
     this.nodeName = "";
     this.nodeValue = null;
-    
-    // A NodeList that contains all children of this node. If there are no 
-    // children, this is a NodeList containing no nodes.  The content of the 
-    // returned NodeList is "live" in the sense that, for instance, changes to 
-    // the children of the node object that it was created from are immediately 
-    // reflected in the nodes returned by the NodeList accessors; it is not a 
-    // static snapshot of the content of the node. This is true for every 
+
+    // A NodeList that contains all children of this node. If there are no
+    // children, this is a NodeList containing no nodes.  The content of the
+    // returned NodeList is "live" in the sense that, for instance, changes to
+    // the children of the node object that it was created from are immediately
+    // reflected in the nodes returned by the NodeList accessors; it is not a
+    // static snapshot of the content of the node. This is true for every
     // NodeList, including the ones returned by the getElementsByTagName method.
     this.childNodes      = new NodeList(ownerDocument, this);
-    
+
     // The first child of this node. If there is no such node, this is null
     this.firstChild      = null;
     // The last child of this node. If there is no such node, this is null.
     this.lastChild       = null;
-    // The node immediately preceding this node. If there is no such node, 
+    // The node immediately preceding this node. If there is no such node,
     // this is null.
     this.previousSibling = null;
-    // The node immediately following this node. If there is no such node, 
+    // The node immediately following this node. If there is no such node,
     // this is null.
     this.nextSibling     = null;
-    
+
     this.attributes = null;
     // The namespaces in scope for this node
-    this._namespaces = new NamespaceNodeMap(ownerDocument, this);  
+    this._namespaces = new NamespaceNodeMap(ownerDocument, this);
     this._readonly = false;
-    
-    //IMPORTANT: These must come last so rhino will not iterate parent 
+
+    //IMPORTANT: These must come last so rhino will not iterate parent
     //           properties before child properties.  (qunit.equiv issue)
-    
-    // The parent of this node. All nodes, except Document, DocumentFragment, 
-    // and Attr may have a parent.  However, if a node has just been created 
-    // and not yet added to the tree, or if it has been removed from the tree, 
+
+    // The parent of this node. All nodes, except Document, DocumentFragment,
+    // and Attr may have a parent.  However, if a node has just been created
+    // and not yet added to the tree, or if it has been removed from the tree,
     // this is null
     this.parentNode      = null;
     // The Document object associated with this node
     this.ownerDocument = ownerDocument;
-    
+
 };
 
 // nodeType constants
@@ -1871,7 +2411,7 @@ __extend__(Node.prototype, {
     },
     insertBefore : function(newChild, refChild) {
         var prevNode;
-        
+
         if(newChild==null){
             return newChild;
         }
@@ -1879,47 +2419,47 @@ __extend__(Node.prototype, {
             this.appendChild(newChild);
             return this.newChild;
         }
-        
+
         // test for exceptions
         if (__ownerDocument__(this).implementation.errorChecking) {
             // throw Exception if Node is readonly
             if (this._readonly) {
                 throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
             }
-            
+
             // throw Exception if newChild was not created by this Document
             if (__ownerDocument__(this) != __ownerDocument__(newChild)) {
                 throw(new DOMException(DOMException.WRONG_DOCUMENT_ERR));
             }
-            
+
             // throw Exception if the node is an ancestor
             if (__isAncestor__(this, newChild)) {
                 throw(new DOMException(DOMException.HIERARCHY_REQUEST_ERR));
             }
         }
-        
+
         // if refChild is specified, insert before it
-        if (refChild) {                                
+        if (refChild) {
             // find index of refChild
             var itemIndex = __findItemIndex__(this.childNodes, refChild);
             // throw Exception if there is no child node with this id
             if (__ownerDocument__(this).implementation.errorChecking && (itemIndex < 0)) {
                 throw(new DOMException(DOMException.NOT_FOUND_ERR));
             }
-            
+
             // if the newChild is already in the tree,
             var newChildParent = newChild.parentNode;
             if (newChildParent) {
                 // remove it
                 newChildParent.removeChild(newChild);
             }
-            
+
             // insert newChild into childNodes
             __insertBefore__(this.childNodes, newChild, itemIndex);
-            
+
             // do node pointer surgery
             prevNode = refChild.previousSibling;
-            
+
             // handle DocumentFragment
             if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
                 if (newChild.childNodes.length > 0) {
@@ -1927,7 +2467,7 @@ __extend__(Node.prototype, {
                     for (var ind = 0; ind < newChild.childNodes.length; ind++) {
                         newChild.childNodes[ind].parentNode = this;
                     }
-                    
+
                     // link refChild to last child of DocumentFragment
                     refChild.previousSibling = newChild.childNodes[newChild.childNodes.length-1];
                 }
@@ -1937,19 +2477,19 @@ __extend__(Node.prototype, {
                 // link refChild to newChild
                 refChild.previousSibling = newChild;
             }
-            
-        }else {                                         
+
+        }else {
             // otherwise, append to end
             prevNode = this.lastChild;
             this.appendChild(newChild);
         }
-        
+
         if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
             // do node pointer surgery for DocumentFragment
             if (newChild.childNodes.length > 0) {
-                if (prevNode) {  
+                if (prevNode) {
                     prevNode.nextSibling = newChild.childNodes[0];
-                }else {                                         
+                }else {
                     // this is the first child in the list
                     this.firstChild = newChild.childNodes[0];
                 }
@@ -1960,86 +2500,86 @@ __extend__(Node.prototype, {
             // do node pointer surgery for newChild
             if (prevNode) {
                 prevNode.nextSibling = newChild;
-            }else {                                         
+            }else {
                 // this is the first child in the list
                 this.firstChild = newChild;
             }
             newChild.previousSibling = prevNode;
             newChild.nextSibling     = refChild;
         }
-        
+
         return newChild;
     },
     replaceChild : function(newChild, oldChild) {
         var ret = null;
-        
+
         if(newChild==null || oldChild==null){
             return oldChild;
         }
-        
+
         // test for exceptions
         if (__ownerDocument__(this).implementation.errorChecking) {
             // throw Exception if Node is readonly
             if (this._readonly) {
                 throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
             }
-        
+
             // throw Exception if newChild was not created by this Document
             if (__ownerDocument__(this) != __ownerDocument__(newChild)) {
                 throw(new DOMException(DOMException.WRONG_DOCUMENT_ERR));
             }
-        
+
             // throw Exception if the node is an ancestor
             if (__isAncestor__(this, newChild)) {
                 throw(new DOMException(DOMException.HIERARCHY_REQUEST_ERR));
             }
         }
-        
+
         // get index of oldChild
         var index = __findItemIndex__(this.childNodes, oldChild);
-        
+
         // throw Exception if there is no child node with this id
         if (__ownerDocument__(this).implementation.errorChecking && (index < 0)) {
             throw(new DOMException(DOMException.NOT_FOUND_ERR));
         }
-        
+
         // if the newChild is already in the tree,
         var newChildParent = newChild.parentNode;
         if (newChildParent) {
             // remove it
             newChildParent.removeChild(newChild);
         }
-        
+
         // add newChild to childNodes
         ret = __replaceChild__(this.childNodes,newChild, index);
-        
-        
+
+
         if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
             // do node pointer surgery for Document Fragment
             if (newChild.childNodes.length > 0) {
                 for (var ind = 0; ind < newChild.childNodes.length; ind++) {
                     newChild.childNodes[ind].parentNode = this;
                 }
-                
+
                 if (oldChild.previousSibling) {
                     oldChild.previousSibling.nextSibling = newChild.childNodes[0];
                 } else {
                     this.firstChild = newChild.childNodes[0];
                 }
-                
+
                 if (oldChild.nextSibling) {
                     oldChild.nextSibling.previousSibling = newChild;
                 } else {
                     this.lastChild = newChild.childNodes[newChild.childNodes.length-1];
                 }
-                
+
                 newChild.childNodes[0].previousSibling = oldChild.previousSibling;
                 newChild.childNodes[newChild.childNodes.length-1].nextSibling = oldChild.nextSibling;
             }
         } else {
             // do node pointer surgery for newChild
             newChild.parentNode = this;
-            
+
             if (oldChild.previousSibling) {
                 oldChild.previousSibling.nextSibling = newChild;
             }else{
@@ -2053,7 +2593,7 @@ __extend__(Node.prototype, {
             newChild.previousSibling = oldChild.previousSibling;
             newChild.nextSibling = oldChild.nextSibling;
         }
-        
+
         return ret;
     },
     removeChild : function(oldChild) {
@@ -2061,25 +2601,25 @@ __extend__(Node.prototype, {
             return null;
         }
         // throw Exception if NamedNodeMap is readonly
-        if (__ownerDocument__(this).implementation.errorChecking && 
+        if (__ownerDocument__(this).implementation.errorChecking &&
             (this._readonly || oldChild._readonly)) {
             throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
         }
-        
+
         // get index of oldChild
         var itemIndex = __findItemIndex__(this.childNodes, oldChild);
-        
+
         // throw Exception if there is no child node with this id
         if (__ownerDocument__(this).implementation.errorChecking && (itemIndex < 0)) {
             throw(new DOMException(DOMException.NOT_FOUND_ERR));
         }
-        
+
         // remove oldChild from childNodes
         __removeChild__(this.childNodes, itemIndex);
-        
+
         // do node pointer surgery
         oldChild.parentNode = null;
-        
+
         if (oldChild.previousSibling) {
             oldChild.previousSibling.nextSibling = oldChild.nextSibling;
         }else {
@@ -2090,10 +2630,10 @@ __extend__(Node.prototype, {
         }else {
             this.lastChild = oldChild.previousSibling;
         }
-        
+
         oldChild.previousSibling = null;
         oldChild.nextSibling = null;
-        
+
         return oldChild;
     },
     appendChild : function(newChild) {
@@ -2106,18 +2646,18 @@ __extend__(Node.prototype, {
             if (this._readonly) {
                 throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
             }
-            
+
             // throw Exception if arg was not created by this Document
             if (__ownerDocument__(this) != __ownerDocument__(this)) {
                 throw(new DOMException(DOMException.WRONG_DOCUMENT_ERR));
             }
-            
+
             // throw Exception if the node is an ancestor
             if (__isAncestor__(this, newChild)) {
               throw(new DOMException(DOMException.HIERARCHY_REQUEST_ERR));
             }
         }
-    
+
         // if the newChild is already in the tree,
         var newChildParent = newChild.parentNode;
         if (newChildParent) {
@@ -2125,17 +2665,17 @@ __extend__(Node.prototype, {
            //console.debug('removing node %s', newChild);
             newChildParent.removeChild(newChild);
         }
-    
+
         // add newChild to childNodes
         __appendChild__(this.childNodes, newChild);
-    
+
         if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
             // do node pointer surgery for DocumentFragment
             if (newChild.childNodes.length > 0) {
                 for (var ind = 0; ind < newChild.childNodes.length; ind++) {
                     newChild.childNodes[ind].parentNode = this;
                 }
-                
+
                 if (this.lastChild) {
                     this.lastChild.nextSibling = newChild.childNodes[0];
                     newChild.childNodes[0].previousSibling = this.lastChild;
@@ -2174,24 +2714,25 @@ __extend__(Node.prototype, {
         }
     },
     normalize : function() {
+        var i;
         var inode;
         var nodesToRemove = new NodeList();
-        
+
         if (this.nodeType == Node.ELEMENT_NODE || this.nodeType == Node.DOCUMENT_NODE) {
             var adjacentTextNode = null;
-        
+
             // loop through all childNodes
-            for(var i = 0; i < this.childNodes.length; i++) {
+            for(i = 0; i < this.childNodes.length; i++) {
                 inode = this.childNodes.item(i);
-            
-                if (inode.nodeType == Node.TEXT_NODE) { 
+
+                if (inode.nodeType == Node.TEXT_NODE) {
                     // this node is a text node
-                    if (inode.length < 1) {                  
+                    if (inode.length < 1) {
                         // this text node is empty
                         // add this node to the list of nodes to be remove
-                        __appendChild__(nodesToRemove, inode);      
+                        __appendChild__(nodesToRemove, inode);
                     }else {
-                        if (adjacentTextNode) {                
+                        if (adjacentTextNode) {
                             // previous node was also text
                             adjacentTextNode.appendData(inode.data);
                             // merge the data in adjacent text nodes
@@ -2199,19 +2740,19 @@ __extend__(Node.prototype, {
                             __appendChild__(nodesToRemove, inode);
                         } else {
                             // remember this node for next cycle
-                            adjacentTextNode = inode;              
+                            adjacentTextNode = inode;
                         }
                     }
                 } else {
                     // (soon to be) previous node is not a text node
                     adjacentTextNode = null;
                     // normalize non Text childNodes
-                    inode.normalize();                       
+                    inode.normalize();
                 }
             }
-                
+
             // remove redundant Text Nodes
-            for(var i = 0; i < nodesToRemove.length; i++) {
+            for(i = 0; i < nodesToRemove.length; i++) {
                 inode = nodesToRemove.item(i);
                 inode.parentNode.removeChild(inode);
             }
@@ -2225,46 +2766,48 @@ __extend__(Node.prototype, {
         // delegate to _getElementsByTagNameRecursive
         // recurse childNodes
         var nodelist = new NodeList(__ownerDocument__(this));
-        for(var i = 0; i < this.childNodes.length; i++) {
-            nodeList = __getElementsByTagNameRecursive__(this.childNodes.item(i), tagname, nodelist);
+        for (var i = 0; i < this.childNodes.length; i++) {
+            __getElementsByTagNameRecursive__(this.childNodes.item(i),
+                                              tagname,
+                                              nodelist);
         }
         return nodelist;
     },
     getElementsByTagNameNS : function(namespaceURI, localName) {
         // delegate to _getElementsByTagNameNSRecursive
-        return __getElementsByTagNameNSRecursive__(this, namespaceURI, localName, 
+        return __getElementsByTagNameNSRecursive__(this, namespaceURI, localName,
             new NodeList(__ownerDocument__(this)));
     },
     importNode : function(importedNode, deep) {
-        
+        var i;
         var importNode;
 
         //there is no need to perform namespace checks since everything has already gone through them
         //in order to have gotten into the DOM in the first place. The following line
         //turns namespace checking off in ._isValidNamespace
         __ownerDocument__(this).importing = true;
-        
+
         if (importedNode.nodeType == Node.ELEMENT_NODE) {
             if (!__ownerDocument__(this).implementation.namespaceAware) {
                 // create a local Element (with the name of the importedNode)
                 importNode = __ownerDocument__(this).createElement(importedNode.tagName);
-            
+
                 // create attributes matching those of the importedNode
-                for(var i = 0; i < importedNode.attributes.length; i++) {
+                for(i = 0; i < importedNode.attributes.length; i++) {
                     importNode.setAttribute(importedNode.attributes.item(i).name, importedNode.attributes.item(i).value);
                 }
-            }else {
+            } else {
                 // create a local Element (with the name & namespaceURI of the importedNode)
                 importNode = __ownerDocument__(this).createElementNS(importedNode.namespaceURI, importedNode.nodeName);
-            
+
                 // create attributes matching those of the importedNode
-                for(var i = 0; i < importedNode.attributes.length; i++) {
-                    importNode.setAttributeNS(importedNode.attributes.item(i).namespaceURI, 
+                for(i = 0; i < importedNode.attributes.length; i++) {
+                    importNode.setAttributeNS(importedNode.attributes.item(i).namespaceURI,
                         importedNode.attributes.item(i).name, importedNode.attributes.item(i).value);
                 }
-            
+
                 // create namespace definitions matching those of the importedNode
-                for(var i = 0; i < importedNode._namespaces.length; i++) {
+                for(i = 0; i < importedNode._namespaces.length; i++) {
                     importNode._namespaces[i] = __ownerDocument__(this).createNamespace(importedNode._namespaces.item(i).localName);
                     importNode._namespaces[i].value = importedNode._namespaces.item(i).value;
                 }
@@ -2276,17 +2819,17 @@ __extend__(Node.prototype, {
             } else {
                 // create a local Attribute (with the name & namespaceURI of the importedAttribute)
                 importNode = __ownerDocument__(this).createAttributeNS(importedNode.namespaceURI, importedNode.nodeName);
-            
+
                 // create namespace definitions matching those of the importedAttribute
-                for(var i = 0; i < importedNode._namespaces.length; i++) {
+                for(i = 0; i < importedNode._namespaces.length; i++) {
                     importNode._namespaces[i] = __ownerDocument__(this).createNamespace(importedNode._namespaces.item(i).localName);
                     importNode._namespaces[i].value = importedNode._namespaces.item(i).value;
                 }
             }
-        
+
             // set the value of the local Attribute to match that of the importedAttribute
             importNode.value = importedNode.value;
-            
+
         } else if (importedNode.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
             // create a local DocumentFragment
             importNode = __ownerDocument__(this).createDocumentFragment();
@@ -2309,18 +2852,18 @@ __extend__(Node.prototype, {
         } else {  // throw Exception if nodeType is not supported
             throw(new DOMException(DOMException.NOT_SUPPORTED_ERR));
         }
-        
-        if (deep) {                                    
+
+        if (deep) {
             // recurse childNodes
-            for(var i = 0; i < importedNode.childNodes.length; i++) {
+            for(i = 0; i < importedNode.childNodes.length; i++) {
                 importNode.appendChild(__ownerDocument__(this).importNode(importedNode.childNodes.item(i), true));
             }
         }
-        
+
         //reset importing
         __ownerDocument__(this).importing = false;
         return importNode;
-        
+
     },
     contains : function(node){
         while(node && node != this ){
@@ -2330,21 +2873,21 @@ __extend__(Node.prototype, {
     },
     compareDocumentPosition : function(b){
         //console.log("comparing document position %s %s", this, b);
-        var i, 
-            length, 
-            a = this, 
+        var i,
+            length,
+            a = this,
             parent,
             aparents,
             bparents;
         //handle a couple simpler case first
-        if(a === b)
+        if(a === b) {
             return Node.DOCUMENT_POSITION_EQUAL;
-        
-        if(a.ownerDocument !== b.ownerDocument)
+        }
+        if(a.ownerDocument !== b.ownerDocument) {
             return Node.DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC|
                Node.DOCUMENT_POSITION_FOLLOWING|
                Node.DOCUMENT_POSITION_DISCONNECTED;
-            
+        }
         if(a.parentNode === b.parentNode){
             length = a.parentNode.childNodes.length;
             for(i=0;i<length;i++){
@@ -2355,22 +2898,22 @@ __extend__(Node.prototype, {
                 }
             }
         }
-        
-        if(a.contains(b))
+
+        if(a.contains(b)) {
             return Node.DOCUMENT_POSITION_CONTAINED_BY|
                    Node.DOCUMENT_POSITION_FOLLOWING;
-            
-        if(b.contains(a))
+        }
+        if(b.contains(a)) {
             return Node.DOCUMENT_POSITION_CONTAINS|
                    Node.DOCUMENT_POSITION_PRECEDING;
-            
+        }
         aparents = [];
         parent = a.parentNode;
         while(parent){
             aparents[aparents.length] = parent;
             parent = parent.parentNode;
         }
-        
+
         bparents = [];
         parent = b.parentNode;
         while(parent){
@@ -2384,24 +2927,24 @@ __extend__(Node.prototype, {
                     return Node.DOCUMENT_POSITION_FOLLOWING;
                 }else if(bparents.length < aparents.length){
                     return Node.DOCUMENT_POSITION_PRECEDING;
-                }else{ 
+                }else{
                     //common ancestor diverge point
-                    if(i === 0)
+                    if (i === 0) {
                         return Node.DOCUMENT_POSITION_FOLLOWING;
-                    else
+                    } else {
                         parent = aparents[i-1];
-                        
+                    }
                     return parent.compareDocumentPosition(bparents.pop());
                 }
             }
         }
-            
+
         return Node.DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC|
                Node.DOCUMENT_POSITION_DISCONNECTED;
-        
+
     },
-    toString : function(){
-        return "[object Node]";
+    toString : function() {
+        return '[object Node]';
     }
 
 });
@@ -2417,27 +2960,27 @@ __extend__(Node.prototype, {
  * @return : NodeList
  */
 var __getElementsByTagNameRecursive__ = function (elem, tagname, nodeList) {
-    
+
     if (elem.nodeType == Node.ELEMENT_NODE || elem.nodeType == Node.DOCUMENT_NODE) {
-    
-        if(elem.nodeType !== Node.DOCUMENT_NODE && 
-            ((elem.nodeName.toUpperCase() == tagname.toUpperCase()) || 
+
+        if(elem.nodeType !== Node.DOCUMENT_NODE &&
+            ((elem.nodeName.toUpperCase() == tagname.toUpperCase()) ||
                 (tagname == "*")) ){
             // add matching node to nodeList
-            __appendChild__(nodeList, elem);               
+            __appendChild__(nodeList, elem);
         }
-    
+
         // recurse childNodes
         for(var i = 0; i < elem.childNodes.length; i++) {
             nodeList = __getElementsByTagNameRecursive__(elem.childNodes.item(i), tagname, nodeList);
         }
     }
-    
+
     return nodeList;
 };
 
 /**
- * @method __getElementsByTagNameNSRecursive__  
+ * @method __getElementsByTagNameNSRecursive__
  *      implements getElementsByTagName()
  *
  * @param  elem     : Element  - The element which are checking and then recursing into
@@ -2449,20 +2992,20 @@ var __getElementsByTagNameRecursive__ = function (elem, tagname, nodeList) {
  */
 var __getElementsByTagNameNSRecursive__ = function(elem, namespaceURI, localName, nodeList) {
     if (elem.nodeType == Node.ELEMENT_NODE || elem.nodeType == Node.DOCUMENT_NODE) {
-    
-        if (((elem.namespaceURI == namespaceURI) || (namespaceURI == "*")) && 
+
+        if (((elem.namespaceURI == namespaceURI) || (namespaceURI == "*")) &&
             ((elem.localName == localName) || (localName == "*"))) {
             // add matching node to nodeList
-            __appendChild__(nodeList, elem);               
+            __appendChild__(nodeList, elem);
         }
-        
+
         // recurse childNodes
         for(var i = 0; i < elem.childNodes.length; i++) {
             nodeList = __getElementsByTagNameNSRecursive__(
                 elem.childNodes.item(i), namespaceURI, localName, nodeList);
         }
     }
-    
+
     return nodeList;
 };
 
@@ -2478,9 +3021,6 @@ var __isAncestor__ = function(target, node) {
     return ((target == node) || ((target.parentNode) && (__isAncestor__(target.parentNode, node))));
 };
 
-var __ownerDocument__ = function(node){
-    return (node.nodeType == Node.DOCUMENT_NODE)?node:node.ownerDocument;
-};
 
 
 var __recursivelyGatherText__ = function(aNode) {
@@ -2557,9 +3097,393 @@ function __unescapeXML__(str) {
     return str;
 };
 
+/**
+ * @class  NamedNodeMap -
+ *      used to represent collections of nodes that can be accessed by name
+ *      typically a set of Element attributes
+ *
+ * @extends NodeList -
+ *      note W3C spec says that this is not the case, but we need an item()
+ *      method identical to NodeList's, so why not?
+ * @param  ownerDocument : Document - the ownerDocument
+ * @param  parentNode    : Node - the node that the NamedNodeMap is attached to (or null)
+ */
+NamedNodeMap = function(ownerDocument, parentNode) {
+    NodeList.apply(this, arguments);
+    __setArray__(this, []);
+};
+NamedNodeMap.prototype = new NodeList();
+__extend__(NamedNodeMap.prototype, {
+    add: function(name){
+        this[this.length] = name;
+    },
+    getNamedItem : function(name) {
+        var ret = null;
+        //console.log('NamedNodeMap getNamedItem %s', name);
+        // test that Named Node exists
+        var itemIndex = __findNamedItemIndex__(this, name);
+
+        if (itemIndex > -1) {
+            // found it!
+            ret = this[itemIndex];
+        }
+        // if node is not found, default value null is returned
+        return ret;
+    },
+    setNamedItem : function(arg) {
+      //console.log('setNamedItem %s', arg);
+      // test for exceptions
+      if (__ownerDocument__(this).implementation.errorChecking) {
+            // throw Exception if arg was not created by this Document
+            if (this.ownerDocument != arg.ownerDocument) {
+              throw(new DOMException(DOMException.WRONG_DOCUMENT_ERR));
+            }
+
+            // throw Exception if DOMNamedNodeMap is readonly
+            if (this._readonly || (this.parentNode && this.parentNode._readonly)) {
+              throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
+            }
+
+            // throw Exception if arg is already an attribute of another Element object
+            if (arg.ownerElement && (arg.ownerElement != this.parentNode)) {
+              throw(new DOMException(DOMException.INUSE_ATTRIBUTE_ERR));
+            }
+      }
+
+     //console.log('setNamedItem __findNamedItemIndex__ ');
+      // get item index
+      var itemIndex = __findNamedItemIndex__(this, arg.name);
+      var ret = null;
+
+     //console.log('setNamedItem __findNamedItemIndex__ %s', itemIndex);
+      if (itemIndex > -1) {                          // found it!
+            ret = this[itemIndex];                // use existing Attribute
+
+            // throw Exception if DOMAttr is readonly
+            if (__ownerDocument__(this).implementation.errorChecking && ret._readonly) {
+              throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
+            } else {
+              this[itemIndex] = arg;                // over-write existing NamedNode
+              this[arg.name.toLowerCase()] = arg;
+            }
+      } else {
+            // add new NamedNode
+           //console.log('setNamedItem add new named node map (by index)');
+            Array.prototype.push.apply(this, [arg]);
+           //console.log('setNamedItem add new named node map (by name) %s %s', arg, arg.name);
+            this[arg.name] = arg;
+           //console.log('finsished setNamedItem add new named node map (by name) %s', arg.name);
+
+      }
+
+     //console.log('setNamedItem parentNode');
+      arg.ownerElement = this.parentNode;            // update ownerElement
+      // return old node or new node
+     //console.log('setNamedItem exit');
+      return ret;
+    },
+    removeNamedItem : function(name) {
+          var ret = null;
+          // test for exceptions
+          // throw Exception if NamedNodeMap is readonly
+          if (__ownerDocument__(this).implementation.errorChecking &&
+                (this._readonly || (this.parentNode && this.parentNode._readonly))) {
+              throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
+          }
+
+          // get item index
+          var itemIndex = __findNamedItemIndex__(this, name);
+
+          // throw Exception if there is no node named name in this map
+          if (__ownerDocument__(this).implementation.errorChecking && (itemIndex < 0)) {
+            throw(new DOMException(DOMException.NOT_FOUND_ERR));
+          }
+
+          // get Node
+          var oldNode = this[itemIndex];
+          //this[oldNode.name] = undefined;
+
+          // throw Exception if Node is readonly
+          if (__ownerDocument__(this).implementation.errorChecking && oldNode._readonly) {
+            throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
+          }
+
+          // return removed node
+          return __removeChild__(this, itemIndex);
+    },
+    getNamedItemNS : function(namespaceURI, localName) {
+        var ret = null;
+
+        // test that Named Node exists
+        var itemIndex = __findNamedItemNSIndex__(this, namespaceURI, localName);
+
+        if (itemIndex > -1) {
+            // found it! return NamedNode
+            ret = this[itemIndex];
+        }
+        // if node is not found, default value null is returned
+        return ret;
+    },
+    setNamedItemNS : function(arg) {
+        //console.log('setNamedItemNS %s', arg);
+        // test for exceptions
+        if (__ownerDocument__(this).implementation.errorChecking) {
+            // throw Exception if NamedNodeMap is readonly
+            if (this._readonly || (this.parentNode && this.parentNode._readonly)) {
+                throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
+            }
+
+            // throw Exception if arg was not created by this Document
+            if (__ownerDocument__(this) != __ownerDocument__(arg)) {
+                throw(new DOMException(DOMException.WRONG_DOCUMENT_ERR));
+            }
+
+            // throw Exception if arg is already an attribute of another Element object
+            if (arg.ownerElement && (arg.ownerElement != this.parentNode)) {
+                throw(new DOMException(DOMException.INUSE_ATTRIBUTE_ERR));
+            }
+        }
+
+        // get item index
+        var itemIndex = __findNamedItemNSIndex__(this, arg.namespaceURI, arg.localName);
+        var ret = null;
+
+        if (itemIndex > -1) {
+            // found it!
+            // use existing Attribute
+            ret = this[itemIndex];
+            // throw Exception if Attr is readonly
+            if (__ownerDocument__(this).implementation.errorChecking && ret._readonly) {
+                throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
+            } else {
+                // over-write existing NamedNode
+                this[itemIndex] = arg;
+            }
+        }else {
+            // add new NamedNode
+            Array.prototype.push.apply(this, [arg]);
+        }
+        arg.ownerElement = this.parentNode;
+
+        // return old node or null
+        return ret;
+        //console.log('finished setNamedItemNS %s', arg);
+    },
+    removeNamedItemNS : function(namespaceURI, localName) {
+          var ret = null;
+
+          // test for exceptions
+          // throw Exception if NamedNodeMap is readonly
+          if (__ownerDocument__(this).implementation.errorChecking && (this._readonly || (this.parentNode && this.parentNode._readonly))) {
+            throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
+          }
+
+          // get item index
+          var itemIndex = __findNamedItemNSIndex__(this, namespaceURI, localName);
+
+          // throw Exception if there is no matching node in this map
+          if (__ownerDocument__(this).implementation.errorChecking && (itemIndex < 0)) {
+            throw(new DOMException(DOMException.NOT_FOUND_ERR));
+          }
+
+          // get Node
+          var oldNode = this[itemIndex];
+
+          // throw Exception if Node is readonly
+          if (__ownerDocument__(this).implementation.errorChecking && oldNode._readonly) {
+            throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
+          }
+
+          return __removeChild__(this, itemIndex);             // return removed node
+    },
+    get xml() {
+          var ret = "";
+
+          // create string containing concatenation of all (but last) Attribute string values (separated by spaces)
+          for (var i=0; i < this.length -1; i++) {
+            ret += this[i].xml +" ";
+          }
+
+          // add last Attribute to string (without trailing space)
+          if (this.length > 0) {
+            ret += this[this.length -1].xml;
+          }
+
+          return ret;
+    },
+    toString : function(){
+        return "[object NamedNodeMap]";
+    }
+
+});
 
 /**
- * @class  Namespace - 
+ * @method __findNamedItemIndex__
+ *      find the item index of the node with the specified name
+ *
+ * @param  name : string - the name of the required node
+ * @param  isnsmap : if its a NamespaceNodeMap
+ * @return : int
+ */
+var __findNamedItemIndex__ = function(namednodemap, name, isnsmap) {
+    var ret = -1;
+    // loop through all nodes
+    for (var i=0; i<namednodemap.length; i++) {
+        // compare name to each node's nodeName
+        if(namednodemap[i].localName && name && isnsmap){
+            if (namednodemap[i].localName.toLowerCase() == name.toLowerCase()) {
+                // found it!
+                ret = i;
+                break;
+            }
+        }else{
+            if(namednodemap[i].name && name){
+                if (namednodemap[i].name.toLowerCase() == name.toLowerCase()) {
+                    // found it!
+                    ret = i;
+                    break;
+                }
+            }
+        }
+    }
+    // if node is not found, default value -1 is returned
+    return ret;
+};
+
+/**
+ * @method __findNamedItemNSIndex__
+ *      find the item index of the node with the specified
+ *      namespaceURI and localName
+ *
+ * @param  namespaceURI : string - the namespace URI of the required node
+ * @param  localName    : string - the local name of the required node
+ * @return : int
+ */
+var __findNamedItemNSIndex__ = function(namednodemap, namespaceURI, localName) {
+    var ret = -1;
+    // test that localName is not null
+    if (localName) {
+        // loop through all nodes
+        for (var i=0; i<namednodemap.length; i++) {
+            if(namednodemap[i].namespaceURI && namednodemap[i].localName){
+                // compare name to each node's namespaceURI and localName
+                if ((namednodemap[i].namespaceURI.toLowerCase() == namespaceURI.toLowerCase()) &&
+                    (namednodemap[i].localName.toLowerCase() == localName.toLowerCase())) {
+                    // found it!
+                    ret = i;
+                    break;
+                }
+            }
+        }
+    }
+    // if node is not found, default value -1 is returned
+    return ret;
+};
+
+/**
+ * @method __hasAttribute__
+ *      Returns true if specified node exists
+ *
+ * @param  name : string - the name of the required node
+ * @return : boolean
+ */
+var __hasAttribute__ = function(namednodemap, name) {
+    var ret = false;
+    // test that Named Node exists
+    var itemIndex = __findNamedItemIndex__(namednodemap, name);
+        if (itemIndex > -1) {
+        // found it!
+        ret = true;
+    }
+    // if node is not found, default value false is returned
+    return ret;
+}
+
+/**
+ * @method __hasAttributeNS__
+ *      Returns true if specified node exists
+ *
+ * @param  namespaceURI : string - the namespace URI of the required node
+ * @param  localName    : string - the local name of the required node
+ * @return : boolean
+ */
+var __hasAttributeNS__ = function(namednodemap, namespaceURI, localName) {
+    var ret = false;
+    // test that Named Node exists
+    var itemIndex = __findNamedItemNSIndex__(namednodemap, namespaceURI, localName);
+    if (itemIndex > -1) {
+        // found it!
+        ret = true;
+    }
+    // if node is not found, default value false is returned
+    return ret;
+}
+
+/**
+ * @method __cloneNamedNodes__
+ *      Returns a NamedNodeMap containing clones of the Nodes in this NamedNodeMap
+ *
+ * @param  parentNode : Node - the new parent of the cloned NodeList
+ * @param  isnsmap : bool - is this a NamespaceNodeMap
+ * @return NamedNodeMap containing clones of the Nodes in this NamedNodeMap
+ */
+var __cloneNamedNodes__ = function(namednodemap, parentNode, isnsmap) {
+    var cloneNamedNodeMap = isnsmap?
+        new NamespaceNodeMap(namednodemap.ownerDocument, parentNode):
+        new NamedNodeMap(namednodemap.ownerDocument, parentNode);
+
+    // create list containing clones of all children
+    for (var i=0; i < namednodemap.length; i++) {
+        __appendChild__(cloneNamedNodeMap, namednodemap[i].cloneNode(false));
+    }
+
+    return cloneNamedNodeMap;
+};
+
+
+/**
+ * @class  NamespaceNodeMap -
+ *      used to represent collections of namespace nodes that can be
+ *      accessed by name typically a set of Element attributes
+ *
+ * @extends NamedNodeMap
+ *
+ * @param  ownerDocument : Document - the ownerDocument
+ * @param  parentNode    : Node - the node that the NamespaceNodeMap is attached to (or null)
+ */
+var NamespaceNodeMap = function(ownerDocument, parentNode) {
+    this.NamedNodeMap = NamedNodeMap;
+    this.NamedNodeMap(ownerDocument, parentNode);
+    __setArray__(this, []);
+};
+NamespaceNodeMap.prototype = new NamedNodeMap();
+__extend__(NamespaceNodeMap.prototype, {
+    get xml() {
+        var ret = "",
+            ns,
+            ind;
+        // identify namespaces declared local to this Element (ie, not inherited)
+        for (ind = 0; ind < this.length; ind++) {
+            // if namespace declaration does not exist in the containing node's, parentNode's namespaces
+            ns = null;
+            try {
+                var ns = this.parentNode.parentNode._namespaces.
+                    getNamedItem(this[ind].localName);
+            }catch (e) {
+                //breaking to prevent default namespace being inserted into return value
+                break;
+            }
+            if (!(ns && (""+ ns.nodeValue == ""+ this[ind].nodeValue))) {
+                // display the namespace declaration
+                ret += this[ind].xml +" ";
+            }
+        }
+        return ret;
+    }
+});
+
+/**
+ * @class  Namespace -
  *      The Namespace interface represents an namespace in an Element object
  *
  * @param  ownerDocument : The Document object associated with this node.
@@ -2567,17 +3491,17 @@ function __unescapeXML__(str) {
 Namespace = function(ownerDocument) {
     Node.apply(this, arguments);
     // the name of this attribute
-    this.name      = "";                           
-    
-    // If this attribute was explicitly given a value in the original document, 
+    this.name      = "";
+
+    // If this attribute was explicitly given a value in the original document,
     // this is true; otherwise, it is false.
     // Note that the implementation is in charge of this attribute, not the user.
-    // If the user changes the value of the attribute (even if it ends up having 
-    // the same value as the default value) then the specified flag is 
+    // If the user changes the value of the attribute (even if it ends up having
+    // the same value as the default value) then the specified flag is
     // automatically flipped to true
     this.specified = false;
 };
-Namespace.prototype = new Node;
+Namespace.prototype = new Node();
 __extend__(Namespace.prototype, {
     get value(){
         // the value of the attribute is returned as a string
@@ -2599,7 +3523,7 @@ __extend__(Namespace.prototype, {
           else {  // handle default namespace
             ret += "xmlns=\""+ __escapeXML__(this.nodeValue) +"\"";
           }
-        
+
           return ret;
     },
     toString: function(){
@@ -2616,7 +3540,7 @@ __extend__(Namespace.prototype, {
 CharacterData = function(ownerDocument) {
     Node.apply(this, arguments);
 };
-CharacterData.prototype = new Node;
+CharacterData.prototype = new Node();
 __extend__(CharacterData.prototype,{
     get data(){
         return this.nodeValue;
@@ -2639,18 +3563,18 @@ __extend__(CharacterData.prototype,{
         // append data
         this.data = "" + this.data + arg;
     },
-    deleteData: function(offset, count){ 
+    deleteData: function(offset, count){
         // throw Exception if CharacterData is readonly
         if (__ownerDocument__(this).implementation.errorChecking && this._readonly) {
             throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
         }
         if (this.data) {
             // throw Exception if offset is negative or greater than the data length,
-            if (__ownerDocument__(this).implementation.errorChecking && 
+            if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset >  this.data.length) || (count < 0))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
             }
-            
+
             // delete data
             if(!count || (offset + count) > this.data.length) {
               this.data = this.data.substring(0, offset);
@@ -2665,22 +3589,22 @@ __extend__(CharacterData.prototype,{
         if(__ownerDocument__(this).implementation.errorChecking && this._readonly){
             throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
         }
-        
+
         if(this.data){
             // throw Exception if offset is negative or greater than the data length,
-            if (__ownerDocument__(this).implementation.errorChecking && 
+            if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset >  this.data.length))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
             }
-            
+
             // insert data
             this.data =  this.data.substring(0, offset).concat(arg, this.data.substring(offset));
         }else {
             // throw Exception if offset is negative or greater than the data length,
-            if (__ownerDocument__(this).implementation.errorChecking && (offset != 0)) {
+            if (__ownerDocument__(this).implementation.errorChecking && (offset !== 0)) {
                throw(new DOMException(DOMException.INDEX_SIZE_ERR));
             }
-            
+
             // set data
             this.data = arg;
         }
@@ -2690,14 +3614,14 @@ __extend__(CharacterData.prototype,{
         if (__ownerDocument__(this).implementation.errorChecking && this._readonly) {
             throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
         }
-        
+
         if (this.data) {
             // throw Exception if offset is negative or greater than the data length,
-            if (__ownerDocument__(this).implementation.errorChecking && 
+            if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset >  this.data.length) || (count < 0))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
             }
-            
+
             // replace data
             this.data = this.data.substring(0, offset).
                 concat(arg, this.data.substring(offset + count));
@@ -2711,7 +3635,7 @@ __extend__(CharacterData.prototype,{
         if (this.data) {
             // throw Exception if offset is negative or greater than the data length,
             // or the count is negative
-            if (__ownerDocument__(this).implementation.errorChecking && 
+            if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset > this.data.length) || (count < 0))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
             }
@@ -2730,12 +3654,12 @@ __extend__(CharacterData.prototype,{
 });
 
 /**
- * @class  Text  
- *      The Text interface represents the textual content (termed 
+ * @class  Text
+ *      The Text interface represents the textual content (termed
  *      character data in XML) of an Element or Attr.
- *      If there is no markup inside an element's content, the text is 
- *      contained in a single object implementing the Text interface that 
- *      is the only child of the element. If there is markup, it is 
+ *      If there is no markup inside an element's content, the text is
+ *      contained in a single object implementing the Text interface that
+ *      is the only child of the element. If there is markup, it is
  *      parsed into a list of elements and Text nodes that form the
  *      list of children of the element.
  * @extends CharacterData
@@ -2745,18 +3669,18 @@ Text = function(ownerDocument) {
     CharacterData.apply(this, arguments);
     this.nodeName  = "#text";
 };
-Text.prototype = new CharacterData;
+Text.prototype = new CharacterData();
 __extend__(Text.prototype,{
     get localName(){
         return null;
     },
     // Breaks this Text node into two Text nodes at the specified offset,
-    // keeping both in the tree as siblings. This node then only contains 
-    // all the content up to the offset point.  And a new Text node, which 
-    // is inserted as the next sibling of this node, contains all the 
+    // keeping both in the tree as siblings. This node then only contains
+    // all the content up to the offset point.  And a new Text node, which
+    // is inserted as the next sibling of this node, contains all the
     // content at and after the offset point.
     splitText : function(offset) {
-        var data, 
+        var data,
             inode;
         // test for exceptions
         if (__ownerDocument__(this).implementation.errorChecking) {
@@ -2792,7 +3716,7 @@ __extend__(Text.prototype,{
         return __escapeXML__(""+ this.nodeValue);
     },
     toString: function(){
-        return "[object Text]";    
+        return "[object Text]";
     }
 });
 
@@ -2809,7 +3733,7 @@ CDATASection = function(ownerDocument) {
     Text.apply(this, arguments);
     this.nodeName = '#cdata-section';
 };
-CDATASection.prototype = new Text;
+CDATASection.prototype = new Text();
 __extend__(CDATASection.prototype,{
     get nodeType(){
         return Node.CDATA_SECTION_NODE;
@@ -2822,8 +3746,8 @@ __extend__(CDATASection.prototype,{
     }
 });
 /**
- * @class  Comment 
- *      This represents the content of a comment, i.e., all the 
+ * @class  Comment
+ *      This represents the content of a comment, i.e., all the
  *      characters between the starting '<!--' and ending '-->'
  * @extends CharacterData
  * @param  ownerDocument :  The Document object associated with this node.
@@ -2832,7 +3756,7 @@ Comment = function(ownerDocument) {
     CharacterData.apply(this, arguments);
     this.nodeName  = "#comment";
 };
-Comment.prototype = new CharacterData;
+Comment.prototype = new CharacterData();
 __extend__(Comment.prototype, {
     get localName(){
         return null;
@@ -2858,7 +3782,7 @@ DocumentType = function(ownerDocument) {
     this.systemId = null;
     this.publicId = null;
 };
-DocumentType.prototype = new Node;
+DocumentType.prototype = new Node();
 __extend__({
     get name(){
         return this.nodeName;
@@ -2878,7 +3802,7 @@ __extend__({
 });
 
 /**
- * @class  Attr 
+ * @class  Attr
  *      The Attr interface represents an attribute in an Element object
  * @extends Node
  * @param  ownerDocument : The Document object associated with this node.
@@ -2890,7 +3814,7 @@ Attr = function(ownerDocument) {
     //TODO: our implementation of Attr is incorrect because we don't
     //      treat the value of the attribute as a child text node.
 };
-Attr.prototype = new Node;
+Attr.prototype = new Node();
 __extend__(Attr.prototype, {
     // the name of this attribute
     get name(){
@@ -2915,27 +3839,28 @@ __extend__(Attr.prototype, {
         this.nodeValue = newText;
     },
     get specified(){
-        return (this!==null&&this!=undefined);
+        return (this !== null && this !== undefined);
     },
     get nodeType(){
         return Node.ATTRIBUTE_NODE;
     },
-    get xml(){
-        if(this.nodeValue)
+    get xml() {
+        if (this.nodeValue) {
             return  __escapeXML__(this.nodeValue+"");
-        else
+        } else {
             return '';
+        }
     },
-    toString : function(){
-        return "[object Attr]";
+    toString : function() {
+        return '[object Attr]';
     }
 });
 
 
 /**
- * @class  Element - 
- *      By far the vast majority of objects (apart from text) 
- *      that authors encounter when traversing a document are 
+ * @class  Element -
+ *      By far the vast majority of objects (apart from text)
+ *      that authors encounter when traversing a document are
  *      Element nodes.
  * @extends Node
  * @param  ownerDocument : The Document object associated with this node.
@@ -2944,13 +3869,13 @@ Element = function(ownerDocument) {
     Node.apply(this, arguments);
     this.attributes = new NamedNodeMap(this.ownerDocument, this);
 };
-Element.prototype = new Node;
-__extend__(Element.prototype, {	
+Element.prototype = new Node();
+__extend__(Element.prototype, {
     // The name of the element.
     get tagName(){
-        return this.nodeName;  
+        return this.nodeName;
     },
-    
+
     getAttribute: function(name) {
         var ret = null;
         // if attribute exists, use it
@@ -2959,7 +3884,7 @@ __extend__(Element.prototype, {
             ret = attr.value;
         }
         // if Attribute exists, return its value, otherwise, return null
-        return ret; 
+        return ret;
     },
     setAttribute : function (name, value) {
         // if attribute exists, use it
@@ -2971,27 +3896,27 @@ __extend__(Element.prototype, {
         if(__ownerDocument__(this)){
             if (attr===null||attr===undefined) {
                 // otherwise create it
-                attr = __ownerDocument__(this).createAttribute(name);  
+                attr = __ownerDocument__(this).createAttribute(name);
                //console.log('attr %s', attr);
             }
-            
-            
+
+
             // test for exceptions
             if (__ownerDocument__(this).implementation.errorChecking) {
                 // throw Exception if Attribute is readonly
                 if (attr._readonly) {
                     throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
                 }
-                
+
                 // throw Exception if the value string contains an illegal character
-                if (!__isValidString__(value)) {
+                if (!__isValidString__(value+'')) {
                     throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
                 }
             }
-            
+
             // assign values to properties (and aliases)
             attr.value     = value + '';
-            
+
             // add/replace Attribute in NamedNodeMap
             this.attributes.setNamedItem(attr);
            //console.log('element setNamedItem %s', attr);
@@ -3021,15 +3946,15 @@ __extend__(Element.prototype, {
       if (__ownerDocument__(this).implementation.errorChecking && oldAttr._readonly) {
         throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
       }
-    
+
       // get item index
       var itemIndex = this.attributes._findItemIndex(oldAttr._id);
-    
+
       // throw Exception if node does not exist in this map
       if (__ownerDocument__(this).implementation.errorChecking && (itemIndex < 0)) {
         throw(new DOMException(DOMException.NOT_FOUND_ERR));
       }
-    
+
       return this.attributes._removeChild(itemIndex);
     },
     getAttributeNS : function(namespaceURI, localName) {
@@ -3045,41 +3970,41 @@ __extend__(Element.prototype, {
         // call NamedNodeMap.getNamedItem
         //console.log('setAttributeNS %s %s %s', namespaceURI, qualifiedName, value);
         var attr = this.attributes.getNamedItem(namespaceURI, qualifiedName);
-        
+
         if (!attr) {  // if Attribute exists, use it
             // otherwise create it
             attr = __ownerDocument__(this).createAttributeNS(namespaceURI, qualifiedName);
         }
-        
-        var value = value+'';
-        
+
+        value = '' + value;
+
         // test for exceptions
         if (__ownerDocument__(this).implementation.errorChecking) {
             // throw Exception if Attribute is readonly
             if (attr._readonly) {
                 throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
             }
-            
+
             // throw Exception if the Namespace is invalid
             if (!__isValidNamespace__(this.ownerDocument, namespaceURI, qualifiedName, true)) {
                 throw(new DOMException(DOMException.NAMESPACE_ERR));
             }
-            
+
             // throw Exception if the value string contains an illegal character
             if (!__isValidString__(value)) {
                 throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
             }
         }
-        
+
         // if this Attribute is an ID
         //if (__isIdDeclaration__(name)) {
         //    this.id = value;
         //}
-        
+
         // assign values to properties (and aliases)
         attr.value     = value;
         attr.nodeValue = value;
-        
+
         // delegate to NamedNodeMap.setNamedItem
         this.attributes.setNamedItemNS(attr);
     },
@@ -3096,7 +4021,7 @@ __extend__(Element.prototype, {
         if ((newAttr.prefix == "") &&  __isIdDeclaration__(newAttr.name)) {
             this.id = newAttr.value+'';  // cache ID for getElementById()
         }
-        
+
         // delegate to NamedNodeMap.setNamedItemNS
         return this.attributes.setNamedItemNS(newAttr);
     },
@@ -3117,28 +4042,31 @@ __extend__(Element.prototype, {
             attrs,
             attrstring,
             i;
-        
+
         // serialize namespace declarations
         if (this.namespaceURI ){
             if((this === this.ownerDocument.documentElement) ||
-                (!this.parentNode)||
-                (this.parentNode && (this.parentNode.namespaceURI !== this.namespaceURI)))
-                ns = ' xmlns'+(this.prefix?(':'+this.prefix):'')+
-                    '="'+this.namespaceURI+'"';
+               (!this.parentNode)||
+               (this.parentNode && (this.parentNode.namespaceURI !== this.namespaceURI))) {
+                ns = ' xmlns' + (this.prefix?(':'+this.prefix):'') +
+                    '="' + this.namespaceURI + '"';
+            }
         }
-        
+
         // serialize Attribute declarations
         attrs = this.attributes;
         attrstring = "";
         for(i=0;i< attrs.length;i++){
-            if(attrs[i].name.match('xmlns:'))
+            if(attrs[i].name.match('xmlns:')) {
                 attrstring += " "+attrs[i].name+'="'+attrs[i].xml+'"';
+            }
         }
         for(i=0;i< attrs.length;i++){
-            if(!attrs[i].name.match('xmlns:'))
+            if(!attrs[i].name.match('xmlns:')) {
                 attrstring += " "+attrs[i].name+'="'+attrs[i].xml+'"';
+            }
         }
-        
+
         if(this.hasChildNodes()){
             // serialize this Element
             ret += "<" + this.tagName + ns + attrstring +">";
@@ -3147,15 +4075,13 @@ __extend__(Element.prototype, {
         }else{
             ret += "<" + this.tagName + ns + attrstring +"/>";
         }
-        
+
         return ret;
     },
     toString : function(){
         return '[object Element]';
     }
 });
-
-
 /**
  * @class  DOMException - raised when an operation is impossible to perform
  * @author Jon van Noort (jon@webarcana.com.au)
@@ -3186,7 +4112,7 @@ DOMException.NAMESPACE_ERR                  = 14;
 DOMException.INVALID_ACCESS_ERR             = 15;
 
 /**
- * @class  DocumentFragment - 
+ * @class  DocumentFragment -
  *      DocumentFragment is a "lightweight" or "minimal" Document object.
  * @extends Node
  * @param  ownerDocument :  The Document object associated with this node.
@@ -3195,20 +4121,20 @@ DocumentFragment = function(ownerDocument) {
     Node.apply(this, arguments);
     this.nodeName  = "#document-fragment";
 };
-DocumentFragment.prototype = new Node;
+DocumentFragment.prototype = new Node();
 __extend__(DocumentFragment.prototype,{
     get nodeType(){
         return Node.DOCUMENT_FRAGMENT_NODE;
     },
     get xml(){
         var xml = "",
-            count = this.childNodes.length;
-        
+        count = this.childNodes.length;
+
         // create string concatenating the serialized ChildNodes
         for (var i = 0; i < count; i++) {
             xml += this.childNodes.item(i).xml;
         }
-        
+
         return xml;
     },
     toString : function(){
@@ -3219,12 +4145,12 @@ __extend__(DocumentFragment.prototype,{
     }
 });
 
- 
+
 /**
- * @class  ProcessingInstruction - 
- *      The ProcessingInstruction interface represents a 
- *      "processing instruction", used in XML as a way to 
- *      keep processor-specific information in the text of 
+ * @class  ProcessingInstruction -
+ *      The ProcessingInstruction interface represents a
+ *      "processing instruction", used in XML as a way to
+ *      keep processor-specific information in the text of
  *      the document
  * @extends Node
  * @author Jon van Noort (jon@webarcana.com.au)
@@ -3233,7 +4159,7 @@ __extend__(DocumentFragment.prototype,{
 ProcessingInstruction = function(ownerDocument) {
     Node.apply(this, arguments);
 };
-ProcessingInstruction.prototype = new Node;
+ProcessingInstruction.prototype = new Node();
 __extend__(ProcessingInstruction.prototype, {
     get data(){
         return this.nodeValue;
@@ -3279,8 +4205,8 @@ __extend__(ProcessingInstruction.prototype, {
  * @author envjs team
  */
 
-Entity = function() { 
-    throw new Error("Entity Not Implemented" ); 
+Entity = function() {
+    throw new Error("Entity Not Implemented" );
 };
 
 Entity.constants = {
@@ -3548,14 +4474,14 @@ Entity.constants = {
  * @author envjs team
  */
 
-EntityReference = function() { 
-    throw new Error("EntityReference Not Implemented" ); 
+EntityReference = function() {
+    throw new Error("EntityReference Not Implemented" );
 };
 
 /**
- * @class  DOMImplementation - 
+ * @class  DOMImplementation -
  *      provides a number of methods for performing operations
- *      that are independent of any particular instance of the 
+ *      that are independent of any particular instance of the
  *      document object model.
  *
  * @author Jon van Noort (jon@webarcana.com.au)
@@ -3593,14 +4519,14 @@ __extend__(DOMImplementation.prototype,{
         return doctype;
     },
     createDocument : function(nsuri, qname, doctype){
-        
+
         var doc = null, documentElement;
-            
+
         doc = new Document(this, null);
         if(doctype){
             doc.doctype = doctype;
         }
-        
+
         if(nsuri && qname){
             documentElement = doc.createElementNS(nsuri, qname);
         }else if(qname){
@@ -3710,7 +4636,7 @@ __extend__(DOMImplementation.prototype,{
 function __isNamespaceDeclaration__(attributeName) {
   // test if attributeName is 'xmlns'
   return (attributeName.indexOf('xmlns') > -1);
-};
+}
 
 /**
  * @method DOMImplementation._isIdDeclaration - Return true, if attributeName is an id declaration
@@ -3721,7 +4647,7 @@ function __isNamespaceDeclaration__(attributeName) {
 function __isIdDeclaration__(attributeName) {
   // test if attributeName is 'id' (case insensitive)
   return attributeName?(attributeName.toLowerCase() == 'id'):false;
-};
+}
 
 /**
  * @method DOMImplementation._isValidName - Return true,
@@ -3733,7 +4659,7 @@ function __isIdDeclaration__(attributeName) {
 function __isValidName__(name) {
   // test if name contains only valid characters
   return name.match(re_validName);
-};
+}
 var re_validName = /^[a-zA-Z_:][a-zA-Z0-9\.\-_:]*$/;
 
 /**
@@ -3748,7 +4674,7 @@ var re_validName = /^[a-zA-Z_:][a-zA-Z0-9\.\-_:]*$/;
 function __isValidString__(name) {
   // test that string does not contains invalid characters
   return (name.search(re_invalidStringChars) < 0);
-};
+}
 var re_invalidStringChars = /\x01|\x02|\x03|\x04|\x05|\x06|\x07|\x08|\x0B|\x0C|\x0E|\x0F|\x10|\x11|\x12|\x13|\x14|\x15|\x16|\x17|\x18|\x19|\x1A|\x1B|\x1C|\x1D|\x1E|\x1F|\x7F/;
 
 /**
@@ -3764,7 +4690,7 @@ var re_invalidStringChars = /\x01|\x02|\x03|\x04|\x05|\x06|\x07|\x08|\x0B|\x0C|\
 function __parseNSName__(qualifiedName) {
     var resultNSName = {};
     // unless the qname has a namespaceName, the prefix is the entire String
-    resultNSName.prefix          = qualifiedName;  
+    resultNSName.prefix          = qualifiedName;
     resultNSName.namespaceName   = "";
     // split on ':'
     var delimPos = qualifiedName.indexOf(':');
@@ -3775,7 +4701,7 @@ function __parseNSName__(qualifiedName) {
         resultNSName.namespaceName = qualifiedName.substring(delimPos +1, qualifiedName.length);
     }
     return resultNSName;
-};
+}
 
 /**
  * @method DOMImplementation._parseQName - parse the qualified name
@@ -3786,7 +4712,7 @@ function __parseNSName__(qualifiedName) {
 function __parseQName__(qualifiedName) {
     var resultQName = {};
     // unless the qname has a prefix, the local name is the entire String
-    resultQName.localName = qualifiedName; 
+    resultQName.localName = qualifiedName;
     resultQName.prefix    = "";
     // split on ':'
     var delimPos = qualifiedName.indexOf(':');
@@ -3797,19 +4723,12 @@ function __parseQName__(qualifiedName) {
         resultQName.localName = qualifiedName.substring(delimPos +1, qualifiedName.length);
     }
     return resultQName;
-};
-
-    
-// Local Variables:
-// espresso-indent-level:4
-// c-basic-offset:4
-// tab-width:4
-// End:
+}
 /**
  * @author envjs team
  */
-Notation = function() { 
-    throw new Error("Notation Not Implemented" ); 
+Notation = function() {
+    throw new Error("Notation Not Implemented" );
 };/**
  * @author thatcher
  */
@@ -3899,9 +4818,14 @@ Range.START_TO_END                   = 1;
 Range.END_TO_END                     = 2;
 Range.END_TO_START                   = 3;
   
+/*
+ * Forward declarations
+ */
+var __isValidNamespace__;
+
 /**
- * @class  Document - The Document interface represents the entire HTML 
- *      or XML document. Conceptually, it is the root of the document tree, 
+ * @class  Document - The Document interface represents the entire HTML
+ *      or XML document. Conceptually, it is the root of the document tree,
  *      and provides the primary access to the document's data.
  *
  * @extends Node
@@ -3909,25 +4833,25 @@ Range.END_TO_START                   = 3;
  */
 Document = function(implementation, docParentWindow) {
     Node.apply(this, arguments);
-    
+
     //TODO: Temporary!!! Cnage back to true!!!
     this.async = true;
     // The Document Type Declaration (see DocumentType) associated with this document
     this.doctype = null;
     // The DOMImplementation object that handles this document.
-    this.implementation = implementation
+    this.implementation = implementation;
 
     this.nodeName  = "#document";
     // initially false, set to true by parser
     this.parsing = false;
     this.baseURI = 'about:blank';
-    
+
     this.ownerDocument = null;
-    
+
     this.importing = false;
-    this.location = null;
 };
-Document.prototype = new Node;
+
+Document.prototype = new Node();
 __extend__(Document.prototype,{
     get localName(){
         return null;
@@ -3941,7 +4865,7 @@ __extend__(Document.prototype,{
     get documentElement(){
         var i, length = this.childNodes?this.childNodes.length:0;
         for(i=0;i<length;i++){
-            if(this.childNodes[i].nodeType == Node.ELEMENT_NODE){
+            if(this.childNodes[i].nodeType === Node.ELEMENT_NODE){
                 return this.childNodes[i];
             }
         }
@@ -3950,7 +4874,7 @@ __extend__(Document.prototype,{
     get documentURI(){
         return this.baseURI;
     },
-    createExpression: function(xpath, nsuriMap){ 
+    createExpression: function(xpath, nsuriMap){
         return new XPathExpression(xpath, nsuriMap);
     },
     createDocumentFragment: function() {
@@ -3974,11 +4898,11 @@ __extend__(Document.prototype,{
     },
     createProcessingInstruction: function(target, data) {
         // throw Exception if the target string contains an illegal character
-        if (__ownerDocument__(this).implementation.errorChecking 
-            && (!__isValidName__(target))) {
+        if (__ownerDocument__(this).implementation.errorChecking &&
+            (!__isValidName__(target))) {
             throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
         }
-        
+
         var node = new ProcessingInstruction(this);
         node.target = target;
         node.data = data;
@@ -3986,8 +4910,8 @@ __extend__(Document.prototype,{
     },
     createElement: function(tagName) {
         // throw Exception if the tagName string contains an illegal character
-        if (__ownerDocument__(this).implementation.errorChecking 
-                && (!__isValidName__(tagName))) {
+        if (__ownerDocument__(this).implementation.errorChecking &&
+            (!__isValidName__(tagName))) {
             throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
         }
         var node = new Element(this);
@@ -3998,7 +4922,7 @@ __extend__(Document.prototype,{
         //we use this as a parser flag to ignore the xhtml
         //namespace assumed by the parser
         //console.log('creating element %s %s', namespaceURI, qualifiedName);
-        if(this.baseURI === 'http://envjs.com/xml' && 
+        if(this.baseURI === 'http://envjs.com/xml' &&
             namespaceURI === 'http://www.w3.org/1999/xhtml'){
             return this.createElement(qualifiedName);
         }
@@ -4008,7 +4932,7 @@ __extend__(Document.prototype,{
             if (!__isValidNamespace__(this, namespaceURI, qualifiedName)) {
                 throw(new DOMException(DOMException.NAMESPACE_ERR));
             }
-            
+
             // throw Exception if the qualifiedName string contains an illegal character
             if (!__isValidName__(qualifiedName)) {
                 throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
@@ -4019,15 +4943,15 @@ __extend__(Document.prototype,{
         node.namespaceURI = namespaceURI;
         node.prefix       = qname.prefix;
         node.nodeName     = qualifiedName;
-        
+
         //console.log('created element %s %s', namespaceURI, qualifiedName);
         return node;
     },
     createAttribute : function(name) {
         //console.log('createAttribute %s ', name);
         // throw Exception if the name string contains an illegal character
-        if (__ownerDocument__(this).implementation.errorChecking 
-            && (!__isValidName__(name))) {
+        if (__ownerDocument__(this).implementation.errorChecking &&
+            (!__isValidName__(name))) {
             throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
         }
         var node = new Attr(this);
@@ -4037,7 +4961,7 @@ __extend__(Document.prototype,{
     createAttributeNS : function(namespaceURI, qualifiedName) {
         //we use this as a parser flag to ignore the xhtml
         //namespace assumed by the parser
-        if(this.baseURI === 'http://envjs.com/xml' && 
+        if(this.baseURI === 'http://envjs.com/xml' &&
             namespaceURI === 'http://www.w3.org/1999/xhtml'){
             return this.createAttribute(qualifiedName);
         }
@@ -4048,7 +4972,7 @@ __extend__(Document.prototype,{
             if (!__isValidNamespace__(this, namespaceURI, qualifiedName, true)) {
                 throw(new DOMException(DOMException.NAMESPACE_ERR));
             }
-            
+
             // throw Exception if the qualifiedName string contains an illegal character
             if (!__isValidName__(qualifiedName)) {
                 throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
@@ -4056,7 +4980,7 @@ __extend__(Document.prototype,{
         }
         var node  = new Attr(this);
         var qname = __parseQName__(qualifiedName);
-        node.namespaceURI = namespaceURI===''?null:namespaceURI;
+        node.namespaceURI = namespaceURI === '' ? null : namespaceURI;
         node.prefix       = qname.prefix;
         node.nodeName     = qualifiedName;
         node.nodeValue    = "";
@@ -4068,30 +4992,30 @@ __extend__(Document.prototype,{
         // create Namespace specifying 'this' as ownerDocument
         var node  = new Namespace(this);
         var qname = __parseQName__(qualifiedName);
-        
+
         // assign values to properties (and aliases)
         node.prefix       = qname.prefix;
         node.localName    = qname.localName;
         node.name         = qualifiedName;
         node.nodeValue    = "";
-        
+
         return node;
     },
-    
+
     createRange: function(){
         return new Range();
     },
-    
+
     evaluate: function(xpathText, contextNode, nsuriMapper, resultType, result){
         //return new XPathExpression().evaluate();
         throw Error('Document.evaluate not supported yet!');
     },
-    
+
     getElementById : function(elementId) {
         var retNode = null,
             node;
-        // loop through all Elements in the 'all' collection
-        var all = this.all;
+        // loop through all Elements
+        var all = this.getElementsByTagName('*');
         for (var i=0; i < all.length; i++) {
             node = all[i];
             // if id matches
@@ -4104,7 +5028,7 @@ __extend__(Document.prototype,{
         return retNode;
     },
     normalizeDocument: function(){
-	    this.normalize();
+        this.normalize();
     },
     get nodeType(){
         return Node.DOCUMENT_NODE;
@@ -4112,164 +5036,211 @@ __extend__(Document.prototype,{
     get xml(){
         return this.documentElement.xml;
     },
-	toString: function(){ 
-	    return "[object XMLDocument]"; 
+    toString: function(){
+        return "[object XMLDocument]";
     },
-	get defaultView(){ 
-		return { getComputedStyle: function(elem){
-			return window.getComputedStyle(elem);
-		}};
-	},
-    get styleSheets(){
-        /*TODO*/  
-        return [];
-    }
+    get defaultView(){
+        return { getComputedStyle: function(elem){
+            return window.getComputedStyle(elem);
+        }};
+    },
 });
 
+/*
+ * Helper function
+ *
+ */
+__isValidNamespace__ = function(doc, namespaceURI, qualifiedName, isAttribute) {
 
-var __isValidNamespace__ = function(doc, namespaceURI, qualifiedName, isAttribute) {
-
-    if (doc.importing == true) {
+    if (doc.importing === true) {
         //we're doing an importNode operation (or a cloneNode) - in both cases, there
         //is no need to perform any namespace checking since the nodes have to have been valid
         //to have gotten into the DOM in the first place
         return true;
     }
-    
+
     var valid = true;
     // parse QName
     var qName = __parseQName__(qualifiedName);
-    
-    
+
+
     //only check for namespaces if we're finished parsing
-    if (this.parsing == false) {
-    
+    if (this.parsing === false) {
+
         // if the qualifiedName is malformed
         if (qName.localName.indexOf(":") > -1 ){
             valid = false;
         }
-        
+
         if ((valid) && (!isAttribute)) {
             // if the namespaceURI is not null
             if (!namespaceURI) {
                 valid = false;
             }
         }
-        
+
         // if the qualifiedName has a prefix
-        if ((valid) && (qName.prefix == "")) {
+        if ((valid) && (qName.prefix === "")) {
             valid = false;
         }
-    
     }
-    
+
     // if the qualifiedName has a prefix that is "xml" and the namespaceURI is
     //  different from "http://www.w3.org/XML/1998/namespace" [Namespaces].
-    if ((valid) && (qName.prefix == "xml") && (namespaceURI != "http://www.w3.org/XML/1998/namespace")) {
+    if ((valid) && (qName.prefix === "xml") && (namespaceURI !== "http://www.w3.org/XML/1998/namespace")) {
         valid = false;
     }
-    
+
     return valid;
 };
-
 /**
+ *
+ * This file only handles XML parser.
+ * It is extended by parser/domparser.js (and parser/htmlparser.js)
+ *
+ * This depends on e4x, which some engines may not have.
+ *
  * @author thatcher
  */
-DOMParser = function(principle, documentURI, baseURI){};
+DOMParser = function(principle, documentURI, baseURI) {
+    // TODO: why/what should these 3 args do?
+};
 __extend__(DOMParser.prototype,{
     parseFromString: function(xmlstring, mimetype){
         var doc = new Document(new DOMImplementation()),
             e4;
-        
+
+        // The following are e4x directives.
+        // Full spec is here:
+        // http://www.ecma-international.org/publications/standards/Ecma-357.htm
+        //
+        // that is pretty gross, so checkout this summary
+        // http://rephrase.net/days/07/06/e4x
+        //
+        // also see the Mozilla Developer Center:
+        // https://developer.mozilla.org/en/E4X
+        //
         XML.ignoreComments = false;
         XML.ignoreProcessingInstructions = false;
         XML.ignoreWhitespace = false;
-        
+
+        // for some reason e4x can't handle initial xml declarations
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=336551
+        // The official workaround is the big regexp below
+        // but simpler one seems to be ok
+        // xmlstring = xmlstring.replace(/^<\?xml\s+version\s*=\s*(["'])[^\1]+\1[^?]*\?>/, "");
+        //
         xmlstring = xmlstring.replace(/<\?xml.*\?>/);
-        
+
         e4 = new XMLList(xmlstring);
-        
+
         __toDomNode__(e4, doc, doc);
-        
+
         //console.log('xml \n %s', doc.documentElement.xml);
         return doc;
-        
     }
 });
 
 var __toDomNode__ = function(e4, parent, doc){
-    var xnode, 
+    var xnode,
         domnode,
         children,
         target,
         value,
         length,
         element,
-        kind;
+        kind,
+        item;
     //console.log('converting e4x node list \n %s', e4)
-    for each(xnode in e4){
-        kind = xnode.nodeKind(); 
+
+    // not using the for each(item in e4) since some engines can't
+    // handle the syntax (i.e. says syntax error)
+    //
+    // for each(xnode in e4) {
+    for (item in e4) {
+        // NO do not do this if (e4.hasOwnProperty(item)) {
+        // breaks spidermonkey
+        xnode = e4[item];
+
+        kind = xnode.nodeKind();
         //console.log('treating node kind %s', kind);
         switch(kind){
-            case 'element':
-                //console.log('creating element %s %s', xnode.localName(), xnode.namespace());
-                if(xnode.namespace() && (xnode.namespace()+'') !== ''){
-                    //console.log('createElementNS %s %s',xnode.namespace()+'', xnode.localName() );
-                    domnode = doc.createElementNS(xnode.namespace()+'', xnode.localName());
-                }else{
-                    domnode = doc.createElement(xnode.name()+'');
+        case 'element':
+            // add node
+            //console.log('creating element %s %s', xnode.localName(), xnode.namespace());
+            if(xnode.namespace() && (xnode.namespace()+'') !== ''){
+                //console.log('createElementNS %s %s',xnode.namespace()+'', xnode.localName() );
+                domnode = doc.createElementNS(xnode.namespace()+'', xnode.localName());
+            }else{
+                domnode = doc.createElement(xnode.name()+'');
+            }
+            parent.appendChild(domnode);
+
+            // add attributes
+            __toDomNode__(xnode.attributes(), domnode, doc);
+
+            // add children
+            children = xnode.children();
+            length = children.length();
+            //console.log('recursing? %s', length ? 'yes' : 'no');
+            if (length > 0) {
+                __toDomNode__(children, domnode, doc);
+            }
+            break;
+        case 'attribute':
+            // console.log('setting attribute %s %s %s',
+            //       xnode.localName(), xnode.namespace(), xnode.valueOf());
+
+            //
+            // cross-platform alert.  The original code used
+            //  xnode.text() to get the attribute value
+            //  This worked in Rhino, but did not in Spidermonkey
+            //  valueOf seemed to work in both
+            //
+            if(xnode.namespace() && xnode.namespace().prefix){
+                //console.log("%s", xnode.namespace().prefix);
+                parent.setAttributeNS(xnode.namespace()+'',
+                                      xnode.namespace().prefix+':'+xnode.localName(),
+                                      xnode.valueOf());
+            }else if((xnode.name()+'').match('http://www.w3.org/2000/xmlns/::')){
+                if(xnode.localName()!=='xmlns'){
+                    parent.setAttributeNS('http://www.w3.org/2000/xmlns/',
+                                          'xmlns:'+xnode.localName(),
+                                          xnode.valueOf());
                 }
-                parent.appendChild(domnode);
-                 __toDomNode__(xnode.attributes(), domnode, doc);
-                length = xnode.children().length();
-                //console.log('recursing? %s', length?"yes":"no");
-                if(xnode.children().length()>0){
-                    __toDomNode__(xnode.children(), domnode, doc);
-                }
-                break;
-            case 'attribute':
-                //console.log('setting attribute %s %s %s', 
-                //    xnode.localName(), xnode.namespace(), xnode.text());
-                if(xnode.namespace() && xnode.namespace().prefix){
-                    //console.log("%s", xnode.namespace().prefix);
-                    parent.setAttributeNS(xnode.namespace()+'', 
-                        xnode.namespace().prefix+':'+xnode.localName(), 
-                        xnode.text());
-                }else if((xnode.name()+'').match("http://www.w3.org/2000/xmlns/::")){
-                    if(xnode.localName()!=='xmlns'){
-                        parent.setAttributeNS('http://www.w3.org/2000/xmlns/', 
-                            'xmlns:'+xnode.localName(), 
-                            xnode.text());
-                    }
-                }else{
-                    parent.setAttribute(xnode.localName()+'', xnode.text());
-                }
-                break;
-            case 'text':
-                //console.log('creating text node : %s', xnode);
-                domnode = doc.createTextNode(xnode+'');
-                parent.appendChild(domnode);
-                break;
-            case 'comment':
-                //console.log('creating comment node : %s', xnode);
-                value = xnode+'';
-                domnode = doc.createComment(value.substring(4,value.length-3));
-                parent.appendChild(domnode);
-                break;
-            case 'processing-instruction':
-                //console.log('creating processing-instruction node : %s', xnode);
-                value = xnode+'';
-                target = value.split(' ')[0].substring(2);
-                value = value.split(' ').splice(1).join(" ").replace('?>','');
-                //console.log('creating processing-instruction data : %s', value);
-                domnode = doc.createProcessingInstruction(target, value);
-                parent.appendChild(domnode);
-                break;
+            }else{
+                parent.setAttribute(xnode.localName()+'', xnode.valueOf());
+            }
+            break;
+        case 'text':
+            //console.log('creating text node : %s', xnode);
+            domnode = doc.createTextNode(xnode+'');
+            parent.appendChild(domnode);
+            break;
+        case 'comment':
+            //console.log('creating comment node : %s', xnode);
+            value = xnode+'';
+            domnode = doc.createComment(value.substring(4,value.length-3));
+            parent.appendChild(domnode);
+            break;
+        case 'processing-instruction':
+            //console.log('creating processing-instruction node : %s', xnode);
+            value = xnode+'';
+            target = value.split(' ')[0].substring(2);
+            value = value.split(' ').splice(1).join(' ').replace('?>','');
+            //console.log('creating processing-instruction data : %s', value);
+            domnode = doc.createProcessingInstruction(target, value);
+            parent.appendChild(domnode);
+            break;
+        default:
+            console.log('e4x DOM ERROR');
+            throw new Error("Assertion failed in xml parser");
         }
     }
-}; /**
+};
+/**
  * @author envjs team
- * @class XMLSerializer 
+ * @class XMLSerializer
  */
 
 XMLSerializer = function() {};
@@ -4289,15 +5260,15 @@ __extend__(XMLSerializer.prototype, {
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 /*
- * Envjs event.1.2.0.6 
+ * Envjs event.1.2.13
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
- * 
- * This file simply provides the global definitions we need to 
+ *
+ * This file simply provides the global definitions we need to
  * be able to correctly implement to core browser DOM Event interfaces.
  */
 var Event,
@@ -4308,16 +5279,17 @@ var Event,
     DocumentEvent,
     EventTarget,
     EventException,
-    //nonstandard but very useful for implementing mutation events 
+    //nonstandard but very useful for implementing mutation events
     //among other things like general profiling
     Aspect;
 /*
- * Envjs event.1.2.0.6 
+ * Envjs event.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
@@ -4327,17 +5299,19 @@ var Event,
 /**
  * @author john resig
  */
-// Helper method for extending one object with another.  
+// Helper method for extending one object with another.
 function __extend__(a,b) {
     for ( var i in b ) {
         var g = b.__lookupGetter__(i), s = b.__lookupSetter__(i);
         if ( g || s ) {
-            if ( g ) a.__defineGetter__(i, g);
-            if ( s ) a.__defineSetter__(i, s);
-        } else
+            if ( g ) { a.__defineGetter__(i, g); }
+            if ( s ) { a.__defineSetter__(i, s); }
+        } else {
             a[i] = b[i];
+        }
     } return a;
-};
+}
+
 /**
  * @author john resig
  */
@@ -4347,7 +5321,8 @@ function __setArray__( target, array ) {
     // is a super-fast way to populate an object with array-like properties
     target.length = 0;
     Array.prototype.push.apply( target, array );
-};/**
+}
+/**
  * Borrowed with love from:
  * 
  * jQuery AOP - jQuery plugin to add features of aspect-oriented programming (AOP) to jQuery.
@@ -4588,60 +5563,21 @@ function __setArray__( target, array ) {
 
 
 
-/**
- * 
- * // Introduced in DOM Level 2:
- * interface DocumentEvent {
- *   Event createEvent (in DOMString eventType) 
- *      raises (DOMException);
- * };
- */
-DocumentEvent = function(){};
-DocumentEvent.prototype.createEvent = function(eventType){
-    //console.debug('createEvent(%s)', eventType); 
-    switch (eventType){
-        case 'Events':
-            return new Event(); 
-            break;
-        case 'HTMLEvents':
-            return new Event(); 
-            break;
-        case 'UIEvents':
-            return new UIEvent();
-            break;
-        case 'MouseEvents':
-            return new MouseEvent();
-            break;
-        case 'KeyEvents':
-            return new KeyboardEvent();
-            break;
-        case 'KeyboardEvent':
-            return new KeyboardEvent();
-            break;
-        case 'MutationEvents':
-            return new MutationEvent();
-            break;
-        default:
-            throw(new DOMException(DOMException.NOT_SUPPORTED_ERR));
-    }
-};
-
-Document.prototype.createEvent = DocumentEvent.prototype.createEvent;
 
 /**
- * @name EventTarget 
- * @w3c:domlevel 2 
+ * @name EventTarget
+ * @w3c:domlevel 2
  * @uri -//TODO: paste dom event level 2 w3c spc uri here
  */
 EventTarget = function(){};
-EventTarget.prototype.addEventListener = function(type, fn, phase){ 
-    __addEventListener__(this, type, fn, phase); 
+EventTarget.prototype.addEventListener = function(type, fn, phase){
+    __addEventListener__(this, type, fn, phase);
 };
-EventTarget.prototype.removeEventListener = function(type, fn){ 
-    __removeEventListener__(this, type, fn); 
+EventTarget.prototype.removeEventListener = function(type, fn){
+    __removeEventListener__(this, type, fn);
 };
-EventTarget.prototype.dispatchEvent = function(event, bubbles){ 
-    __dispatchEvent__(this, event, bubbles); 
+EventTarget.prototype.dispatchEvent = function(event, bubbles){
+    __dispatchEvent__(this, event, bubbles);
 };
 
 __extend__(Node.prototype, EventTarget.prototype);
@@ -4667,16 +5603,15 @@ function __addEventListener__(target, type, fn, phase){
         };
     }
     if ( $events[target.uuid][type][phase].indexOf( fn ) < 0 ){
-        //console.log('adding event listener %s %s %s %s %s %s', target, target.uuid, type, phase, 
+        //console.log('adding event listener %s %s %s %s %s %s', target, target.uuid, type, phase,
         //    $events[target.uuid][type][phase].length, $events[target.uuid][type][phase].indexOf( fn ));
         //console.log('creating listener for function: %s %s %s', target, target.uuid, phase);
         $events[target.uuid][type][phase].push( fn );
-        //console.log('adding event listener %s %s %s %s %s %s', target, target.uuid, type, phase, 
+        //console.log('adding event listener %s %s %s %s %s %s', target, target.uuid, type, phase,
         //    $events[target.uuid][type][phase].length, $events[target.uuid][type][phase].indexOf( fn ));
     }
     //console.log('registered event listeners %s', $events.length);
-};
-
+}
 
 function __removeEventListener__(target, type, fn, phase){
 
@@ -4691,7 +5626,6 @@ function __removeEventListener__(target, type, fn, phase){
         //used to clean all event listeners for a given node
         //console.log('cleaning all event listeners for node %s %s',target, target.uuid);
         delete $events[target.uuid];
-        $events[target.uuid] = null;
         return;
     }else if ( !$events[target.uuid][type] ){
         return;
@@ -4701,35 +5635,37 @@ function __removeEventListener__(target, type, fn, phase){
         //console.log('removing event listener %s %s %s %s', target, type, phase, fn);
         return f != fn;
     });
-};
+}
 
 var __eventuuid__ = 0;
 function __dispatchEvent__(target, event, bubbles){
 
-    if(!event.uuid)
+    if (!event.uuid) {
         event.uuid = __eventuuid__++;
+    }
     //the window scope defines the $event object, for IE(^^^) compatibility;
     //$event = event;
     //console.log('dispatching event %s', event.uuid);
-    if (bubbles == undefined || bubbles == null)
+    if (bubbles === undefined || bubbles === null) {
         bubbles = true;
+    }
 
     if (!event.target) {
         event.target = target;
     }
-    
+
     //console.log('dispatching? %s %s %s', target, event.type, bubbles);
     if ( event.type && (target.nodeType || target === window )) {
 
         //console.log('dispatching event %s %s %s', target, event.type, bubbles);
         __captureEvent__(target, event);
-        
+
         event.eventPhase = Event.AT_TARGET;
         if ( target.uuid && $events[target.uuid] && $events[target.uuid][event.type] ) {
             event.currentTarget = target;
-            //console.log('dispatching %s %s %s %s', target, event.type, 
+            //console.log('dispatching %s %s %s %s', target, event.type,
             //  $events[target.uuid][event.type]['CAPTURING'].length);
-            $events[target.uuid][event.type]['CAPTURING'].forEach(function(fn){
+            $events[target.uuid][event.type].CAPTURING.forEach(function(fn){
                 //console.log('AT_TARGET (CAPTURING) event %s', fn);
                 var returnValue = fn( event );
                 //console.log('AT_TARGET (CAPTURING) return value %s', returnValue);
@@ -4737,9 +5673,9 @@ function __dispatchEvent__(target, event, bubbles){
                     event.stopPropagation();
                 }
             });
-            //console.log('dispatching %s %s %s %s', target, event.type, 
+            //console.log('dispatching %s %s %s %s', target, event.type,
             //  $events[target.uuid][event.type]['BUBBLING'].length);
-            $events[target.uuid][event.type]['BUBBLING'].forEach(function(fn){
+            $events[target.uuid][event.type].BUBBLING.forEach(function(fn){
                 //console.log('AT_TARGET (BUBBLING) event %s', fn);
                 var returnValue = fn( event );
                 //console.log('AT_TARGET (BUBBLING) return value %s', returnValue);
@@ -4759,7 +5695,7 @@ function __dispatchEvent__(target, event, bubbles){
             //with default behavior being executed in a browser but I could be
             //wrong as usual.  The goal is much more to filter at this point
             //what events have no need to be handled
-            console.log('triggering default behavior for %s', event.type);
+            //console.log('triggering default behavior for %s', event.type);
             if(event.type in Envjs.defaultEventBehaviors){
                 Envjs.defaultEventBehaviors[event.type](event);
             }
@@ -4770,12 +5706,12 @@ function __dispatchEvent__(target, event, bubbles){
     }else{
         throw new EventException(EventException.UNSPECIFIED_EVENT_TYPE_ERR);
     }
-};
+}
 
 function __captureEvent__(target, event){
     var ancestorStack = [],
         parent = target.parentNode;
-        
+
     event.eventPhase = Event.CAPTURING_PHASE;
     while(parent){
         if(parent.uuid && $events[parent.uuid] && $events[parent.uuid][event.type]){
@@ -4786,7 +5722,7 @@ function __captureEvent__(target, event){
     while(ancestorStack.length && !event.cancelled){
         event.currentTarget = ancestorStack.pop();
         if($events[event.currentTarget.uuid] && $events[event.currentTarget.uuid][event.type]){
-            $events[event.currentTarget.uuid][event.type]['CAPTURING'].forEach(function(fn){
+            $events[event.currentTarget.uuid][event.type].CAPTURING.forEach(function(fn){
                 var returnValue = fn( event );
                 if(returnValue === false){
                     event.stopPropagation();
@@ -4794,7 +5730,7 @@ function __captureEvent__(target, event){
             });
         }
     }
-};
+}
 
 function __bubbleEvent__(target, event){
     var parent = target.parentNode;
@@ -4802,7 +5738,7 @@ function __bubbleEvent__(target, event){
     while(parent){
         if(parent.uuid && $events[parent.uuid] && $events[parent.uuid][event.type] ){
             event.currentTarget = parent;
-            $events[event.currentTarget.uuid][event.type]['BUBBLING'].forEach(function(fn){
+            $events[event.currentTarget.uuid][event.type].BUBBLING.forEach(function(fn){
                 var returnValue = fn( event );
                 if(returnValue === false){
                     event.stopPropagation();
@@ -4811,7 +5747,7 @@ function __bubbleEvent__(target, event){
         }
         parent = parent.parentNode;
     }
-};
+}
 
 /**
  * @class Event
@@ -4833,7 +5769,7 @@ Event = function(options){
     this._stopPropogation = false;
 };
 
-__extend__(Event.prototype,{       
+__extend__(Event.prototype,{
     get bubbles(){return this._bubbles;},
     get cancelable(){return this._cancelable;},
     get currentTarget(){return this._currentTarget;},
@@ -4874,7 +5810,6 @@ __extend__(Event,{
 
 
 
-
 /**
  * @name UIEvent
  * @param {Object} options
@@ -4884,7 +5819,7 @@ UIEvent = function(options) {
     this._detail = 0;
 };
 
-UIEvent.prototype = new Event;
+UIEvent.prototype = new Event();
 __extend__(UIEvent.prototype,{
     get view(){
         return this._view;
@@ -4902,8 +5837,8 @@ __extend__(UIEvent.prototype,{
 var $onblur,
     $onfocus,
     $onresize;
-    
-    
+
+
 /**
  * @name MouseEvent
  * @w3c:domlevel 2 
@@ -4920,7 +5855,7 @@ MouseEvent = function(options) {
     this._button= null;
     this._relatedTarget= null;
 };
-MouseEvent.prototype = new UIEvent;
+MouseEvent.prototype = new UIEvent();
 __extend__(MouseEvent.prototype,{
     get screenX(){
         return this._screenX;
@@ -4980,10 +5915,10 @@ KeyboardEvent = function(options) {
     this._altKey = false;
     this._metaKey = false;
 };
-KeyboardEvent.prototype = new UIEvent;
+KeyboardEvent.prototype = new UIEvent();
 
 __extend__(KeyboardEvent.prototype,{
-        
+
     get ctrlKey(){
         return this._ctrlKey;
     },
@@ -5005,7 +5940,7 @@ __extend__(KeyboardEvent.prototype,{
     getModifiersState: function(keyIdentifier){
 
     },
-    initMouseEvent: function(type, bubbles, cancelable, windowObject, 
+    initMouseEvent: function(type, bubbles, cancelable, windowObject,
             keyIdentifier, keyLocation, modifiersList, repeat){
         this.initUIEvent(type, bubbles, cancelable, windowObject, 0);
         this._keyIdentifier = keyIdentifier;
@@ -5028,15 +5963,15 @@ KeyboardEvent.DOM_KEY_LOCATION_JOYSTICK      = 5;
 var __supportedMutations__ = /DOMSubtreeModified|DOMNodeInserted|DOMNodeRemoved|DOMAttrModified|DOMCharacterDataModified/;
 
 var __fireMutationEvents__ = Aspect.before({
-    target: EventTarget, 
+    target: EventTarget,
     method: 'addEventListener'
 }, function(target, type){
     if(type && type.match(__supportedMutations__)){
         //unweaving removes the __addEventListener__ aspect
         __fireMutationEvents__.unweave();
         // These two methods are enough to cover all dom 2 manipulations
-        Aspect.around({ 
-            target: Node,  
+        Aspect.around({
+            target: Node,
             method:"removeChild"
         }, function(invocation){
             var event,
@@ -5045,17 +5980,17 @@ var __fireMutationEvents__ = Aspect.before({
             event.initEvent('DOMNodeRemoved', true, false, node.parentNode, null, null, null, null);
             node.dispatchEvent(event, false);
             return invocation.proceed();
-            
-        }); 
-        Aspect.around({ 
-            target: Node,  
+
+        });
+        Aspect.around({
+            target: Node,
             method:"appendChild"
         }, function(invocation) {
             var event,
                 node = invocation.proceed();
             event = node.ownerDocument.createEvent('MutationEvents');
             event.initEvent('DOMNodeInserted', true, false, node.parentNode, null, null, null, null);
-            node.dispatchEvent(event, false); 
+            node.dispatchEvent(event, false);
             return node;
         });
     }
@@ -5070,7 +6005,7 @@ MutationEvent = function(options) {
     this._timeStamp = 0;
 };
 
-MutationEvent.prototype = new Event;
+MutationEvent.prototype = new Event();
 __extend__(MutationEvent.prototype,{
     get relatedNode(){
         return this._relatedNode;
@@ -5087,7 +6022,7 @@ __extend__(MutationEvent.prototype,{
     get attrChange(){
         return this._attrChange;
     },
-    initMutationEvent: function( type, bubbles, cancelable, 
+    initMutationEvent: function( type, bubbles, cancelable,
             relatedNode, prevValue, newValue, attrName, attrChange ){
         this._relatedNode = relatedNode;
         this._prevValue = prevValue;
@@ -5135,6 +6070,61 @@ EventException = function(code) {
   this.code = code;
 };
 EventException.UNSPECIFIED_EVENT_TYPE_ERR = 0;
+/**
+ *
+ * DOM Level 2: http://www.w3.org/TR/DOM-Level-2-Events/events.html
+ * DOM Level 3: http://www.w3.org/TR/DOM-Level-3-Events/
+ *
+ * interface DocumentEvent {
+ *   Event createEvent (in DOMString eventType)
+ *      raises (DOMException);
+ * };
+ *
+ * Firefox (3.6) exposes DocumentEvent
+ * Safari (4) does NOT.
+ */
+
+/**
+ * TODO: Not sure we need a full prototype.  We not just an regular object?
+ */
+DocumentEvent = function(){};
+DocumentEvent.prototype.__EventMap__ = {
+    // Safari4: singular and plural forms accepted
+    // Firefox3.6: singular and plural forms accepted
+    'Event'          : Event,
+    'Events'         : Event,
+    'UIEvent'        : UIEvent,
+    'UIEvents'       : UIEvent,
+    'MouseEvent'     : MouseEvent,
+    'MouseEvents'    : MouseEvent,
+    'MutationEvent'  : MutationEvent,
+    'MutationEvents' : MutationEvent,
+
+    // Safari4: accepts HTMLEvents, but not HTMLEvent
+    // Firefox3.6: accepts HTMLEvents, but not HTMLEvent
+    'HTMLEvent'      : Event,
+    'HTMLEvents'     : Event,
+
+    // Safari4: both not accepted
+    // Firefox3.6, only KeyEvents is accepted
+    'KeyEvent'       : KeyboardEvent,
+    'KeyEvents'      : KeyboardEvent,
+
+    // Safari4: both accepted
+    // Firefox3.6: none accepted
+    'KeyboardEvent'  : KeyboardEvent,
+    'KeyboardEvents' : KeyboardEvent
+};
+
+DocumentEvent.prototype.createEvent = function(eventType) {
+    var Clazz = this.__EventMap__[eventType];
+    if (Clazz) {
+        return new Clazz();
+    }
+    throw(new DOMException(DOMException.NOT_SUPPORTED_ERR));
+};
+
+__extend__(Document.prototype, DocumentEvent.prototype);
 
 /**
  * @author john resig & the envjs team
@@ -5142,11 +6132,11 @@ EventException.UNSPECIFIED_EVENT_TYPE_ERR = 0;
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 
 /*
- * Envjs timer.1.2.0.6 
+ * Envjs timer.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -5162,26 +6152,27 @@ var setTimeout,
     clearInterval;
     
 /*
- * Envjs timer.1.2.0.6 
+ * Envjs timer.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
 
 
 /*
-*	timer.js
+*       timer.js
 *   implementation provided by Steven Parkes
 */
 
 //private
 var $timers = [],
     EVENT_LOOP_RUNNING = false;
-    
+
 $timers.lock = function(fn){
     Envjs.sync(fn)();
 };
@@ -5192,9 +6183,9 @@ var Timer = function(fn, interval){
     this.interval = interval;
     this.at = Date.now() + interval;
     // allows for calling wait() from callbacks
-    this.running = false; 
+    this.running = false;
 };
-  
+
 Timer.prototype.start = function(){};
 Timer.prototype.stop = function(){};
 
@@ -5204,15 +6195,15 @@ Timer.normalize = function(time) {
     if ( isNaN(time) || time < 0 ) {
         time = 0;
     }
-    
+
     if ( EVENT_LOOP_RUNNING && time < Timer.MIN_TIME ) {
         time = Timer.MIN_TIME;
     }
     return time;
 };
-// html5 says this should be at least 4, but the parser is using 
+// html5 says this should be at least 4, but the parser is using
 // a setTimeout for the SAX stuff which messes up the world
-Timer.MIN_TIME = /* 4 */ 0; 
+Timer.MIN_TIME = /* 4 */ 0;
 
 /**
  * @function setTimeout
@@ -5228,7 +6219,8 @@ setTimeout = function(fn, time){
         if (typeof fn == 'string') {
             tfn = function() {
                 try {
-                    eval(fn);
+                    // eval in global scope
+                    eval(fn, null);
                 } catch (e) {
                     console.log('timer error %s %s', fn, e);
                 } finally {
@@ -5265,10 +6257,10 @@ setInterval = function(fn, time){
         time = 10;
     }
     if (typeof fn == 'string') {
-        var fnstr = fn; 
-        fn = function() { 
+        var fnstr = fn;
+        fn = function() {
             eval(fnstr);
-        }; 
+        };
     }
     var num;
     $timers.lock(function(){
@@ -5292,15 +6284,15 @@ clearInterval = clearTimeout = function(num){
             delete $timers[num];
         }
     });
-};	
+};
 
-// wait === null/undefined: execute any timers as they fire, 
+// wait === null/undefined: execute any timers as they fire,
 //  waiting until there are none left
-// wait(n) (n > 0): execute any timers as they fire until there 
-//  are none left waiting at least n ms but no more, even if there 
+// wait(n) (n > 0): execute any timers as they fire until there
+//  are none left waiting at least n ms but no more, even if there
 //  are future events/current threads
 // wait(0): execute any immediately runnable timers and return
-// wait(-n): keep sleeping until the next event is more than n ms 
+// wait(-n): keep sleeping until the next event is more than n ms
 //  in the future
 //
 // TODO: make a priority queue ...
@@ -5310,16 +6302,16 @@ Envjs.wait = function(wait) {
     var delta_wait,
         start = Date.now(),
         was_running = EVENT_LOOP_RUNNING;
-    
+
     if (wait < 0) {
         delta_wait = -wait;
         wait = 0;
     }
-    EVENT_LOOP_RUNNING = true; 
+    EVENT_LOOP_RUNNING = true;
     if (wait !== 0 && wait !== null && wait !== undefined){
         wait += Date.now();
     }
-    
+
     var earliest,
         timer,
         sleep,
@@ -5327,7 +6319,7 @@ Envjs.wait = function(wait) {
         goal,
         now,
         nextfn;
-        
+
     for (;;) {
         //console.log('timer loop');
         earliest = sleep = goal = now = nextfn = null;
@@ -5371,7 +6363,7 @@ Envjs.wait = function(wait) {
         if ( !earliest ) {
             // no events in the queue (but maybe XHR will bring in events, so ...
             if ( !wait || wait < Date.now() ) {
-                // Loop ends if there are no events and a wait hasn't been 
+                // Loop ends if there are no events and a wait hasn't been
                 // requested or has expired
                 break;
             }
@@ -5379,11 +6371,11 @@ Envjs.wait = function(wait) {
         } else {
             // there are events in the queue, but they aren't firable now
             /*if ( delta_wait && sleep <= delta_wait ) {
-                //TODO: why waste a check on a tight 
+                //TODO: why waste a check on a tight
                 // loop if it just falls through?
             // if they will happen within the next delta, fall through to sleep
             } else */if ( wait === 0 || ( wait > 0 && wait < Date.now () ) ) {
-                // loop ends even if there are events but the user 
+                // loop ends even if there are events but the user
                 // specifcally asked not to wait too long
                 break;
             }
@@ -5397,7 +6389,7 @@ Envjs.wait = function(wait) {
         }
         //console.log('sleeping %s', sleep);
         Envjs.sleep(sleep);
-        
+
     }
     EVENT_LOOP_RUNNING = was_running;
 };
@@ -5409,15 +6401,14 @@ Envjs.wait = function(wait) {
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 /*
- * Envjs html.1.2.0.6 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
- * 
- * This file simply provides the global definitions we need to 
+ *
+ * This file simply provides the global definitions we need to
  * be able to correctly implement to core browser DOM HTML interfaces.
  */
 var HTMLDocument,
@@ -5428,46 +6419,64 @@ var HTMLDocument,
     HTMLBaseElement,
     HTMLQuoteElement,
     HTMLBodyElement,
+    HTMLBRElement,
     HTMLButtonElement,
     HTMLCanvasElement,
     HTMLTableColElement,
     HTMLModElement,
     HTMLDivElement,
+    HTMLDListElement,
     HTMLFieldSetElement,
     HTMLFormElement,
     HTMLFrameElement,
     HTMLFrameSetElement,
     HTMLHeadElement,
+    HTMLHeadingElement,
+    HTMLHRElement,
+    HTMLHtmlElement,
     HTMLIFrameElement,
     HTMLImageElement,
     HTMLInputElement,
     HTMLLabelElement,
     HTMLLegendElement,
+    HTMLLIElement,
     HTMLLinkElement,
     HTMLMapElement,
     HTMLMetaElement,
     HTMLObjectElement,
+    HTMLOListElement,
     HTMLOptGroupElement,
     HTMLOptionElement,
+    HTMLParagraphElement,
     HTMLParamElement,
+    HTMLPreElement,
     HTMLScriptElement,
     HTMLSelectElement,
+    HTMLSpanElement,
     HTMLStyleElement,
     HTMLTableElement,
     HTMLTableSectionElement,
     HTMLTableCellElement,
+    HTMLTableDataCellElement,
+    HTMLTableHeaderCellElement,
     HTMLTableRowElement,
     HTMLTextAreaElement,
     HTMLTitleElement,
-    HTMLUnknownElement;
-    
+    HTMLUListElement,
+    HTMLUnknownElement,
+    Image,
+    Option,
+    __loadImage__,
+    __loadLink__;
+
 /*
- * Envjs html.1.2.0.6 
+ * Envjs html.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
@@ -5476,28 +6485,30 @@ var HTMLDocument,
 
 /**
  * @author ariel flesler
- *    http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html 
+ *    http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
  * @param {Object} str
  */
 function __trim__( str ){
     return (str || "").replace( /^\s+|\s+$/g, "" );
-    
-};
+}
+
 
 /**
  * @author john resig
  */
-// Helper method for extending one object with another.  
+// Helper method for extending one object with another.
 function __extend__(a,b) {
     for ( var i in b ) {
         var g = b.__lookupGetter__(i), s = b.__lookupSetter__(i);
         if ( g || s ) {
-            if ( g ) a.__defineGetter__(i, g);
-            if ( s ) a.__defineSetter__(i, s);
-        } else
+            if ( g ) { a.__defineGetter__(i, g); }
+            if ( s ) { a.__defineSetter__(i, s); }
+        } else {
             a[i] = b[i];
+        }
     } return a;
-};
+}
+
 /**
  * @author john resig
  */
@@ -5507,142 +6518,159 @@ function __setArray__( target, array ) {
     // is a super-fast way to populate an object with array-like properties
     target.length = 0;
     Array.prototype.push.apply( target, array );
-};
+}
+
 /**
  * @class  HTMLDocument
  *      The Document interface represents the entire HTML or XML document.
- *      Conceptually, it is the root of the document tree, and provides 
+ *      Conceptually, it is the root of the document tree, and provides
  *      the primary access to the document's data.
  *
  * @extends Document
  */
 HTMLDocument = function(implementation, ownerWindow, referrer) {
     Document.apply(this, arguments);
-    this.referrer = referrer;
+    this.referrer = referrer || '';
     this.baseURI = "about:blank";
     this.ownerWindow = ownerWindow;
-    this.head;
-    this.body;
 };
-HTMLDocument.prototype = new Document;
+
+HTMLDocument.prototype = new Document();
 
 __extend__(HTMLDocument.prototype, {
     createElement: function(tagName){
+        var node;
         tagName = tagName.toUpperCase();
         // create Element specifying 'this' as ownerDocument
-        // This is an html document so we need to use explicit interfaces per the 
+        // This is an html document so we need to use explicit interfaces per the
         //TODO: would be much faster as a big switch
         switch(tagName){
-            case "A":
-                node = new HTMLAnchorElement(this);break;
-            case "AREA":
-                node = new HTMLAreaElement(this);break;
-            case "BASE":
-                node = new HTMLBaseElement(this);break;
-            case "BLOCKQUOTE":
-                node = new HTMLQuoteElement(this);break;
-            case "Q":
-                node = new HTMLQuoteElement(this);break;
-            case "BODY":
-                node = new HTMLBodyElement(this);break;
-            case "BR":
-                node = new HTMLElement(this);break;
-            case "BUTTON":
-                node = new HTMLButtonElement(this);break;
-            case "CAPTION":
-                node = new HTMLElement(this);break;
-            case "COL":
-                node = new HTMLTableColElement(this);break;
-            case "COLGROUP":
-                node = new HTMLTableColElement(this);break;
-            case "DEL":
-                node = new HTMLModElement(this);break;
-            case "INS":
-                node = new HTMLModElement(this);break;
-            case "DIV":
-                node = new HTMLDivElement(this);break;
-            case "DL":
-                node = new HTMLElement(this);break;
-            case "FIELDSET":
-                node = new HTMLFieldSetElement(this);break;
-            case "FORM":
-                node = new HTMLFormElement(this);break;
-            case "FRAME":
-                node = new HTMLFrameElement(this);break;
-            case "H1":
-                node = new HTMLHeadElement(this);break;
-            case "H2":
-                node = new HTMLHeadElement(this);break;
-            case "H3":
-                node = new HTMLHeadElement(this);break;
-            case "H4":
-                node = new HTMLHeadElement(this);break;
-            case "H5":
-                node = new HTMLHeadElement(this);break;
-            case "H6":
-                node = new HTMLHeadElement(this);break;
-            case "HR":
-                node = new HTMLElement(this);break;
-            case "HTML":
-                node = new HTMLElement(this);break;
-            case "IFRAME":
-                node = new HTMLIFrameElement(this);break;
-            case "IMG":
-                node = new HTMLImageElement(this);break;
-            case "INPUT":
-                node = new HTMLInputElement(this);break;
-            case "LABEL":
-                node = new HTMLLabelElement(this);break;
-            case "LEGEND":
-                node = new HTMLLegendElement(this);break;
-            case "LI":
-                node = new HTMLElement(this);break;
-            case "LINK":
-                node = new HTMLLinkElement(this);break;
-            case "MAP":
-                node = new HTMLMapElement(this);break;
-            case "META":
-                node = new HTMLObjectElement(this);break;
-            case "OBJECT":
-                node = new HTMLMapElement(this);break;
-            case "OPTGROUP":
-                node = new HTMLOptGroupElement(this);break;
-            case "OPTION":
-                node = new HTMLOptionElement(this);break;
-            case "P":
-                node = new HTMLParagraphElement(this);break;
-            case "PARAM":
-                node = new HTMLParamElement(this);break;
-            case "PRE":
-                node = new HTMLElement(this);break;
-            case "SCRIPT":
-                node = new HTMLScriptElement(this);break;
-            case "SELECT":
-                node = new HTMLSelectElement(this);break;
-            case "STYLE":
-                node = new HTMLStyleElement(this);break;
-            case "TABLE":
-                node = new HTMLTableElement(this);break;
-            case "TBODY":
-                node = new HTMLTableSectionElement(this);break;
-            case "TFOOT":
-                node = new HTMLTableSectionElement(this);break;
-            case "THEAD":
-                node = new HTMLTableSectionElement(this);break;
-            case "TD":
-                node = new HTMLTableCellElement(this);break;
-            case "TH":
-                node = new HTMLTableCellElement(this);break;
-            case "TEXTAREA":
-                node = new HTMLTextAreaElement(this);break;
-            case "TITLE":
-                node = new HTMLTitleElement(this);break;
-            case "TR":
-                node = new HTMLTableRowElement(this);break;
-            case "UL":
-                node = new HTMLElement(this);break;
-            default:
-                node = new HTMLUnknownElement(this);
+        case "A":
+            node = new HTMLAnchorElement(this);break;
+        case "AREA":
+            node = new HTMLAreaElement(this);break;
+        case "BASE":
+            node = new HTMLBaseElement(this);break;
+        case "BLOCKQUOTE":
+            node = new HTMLQuoteElement(this);break;
+        case "CANVAS":
+            node = new HTMLCanvasElement(this);break;
+        case "Q":
+            node = new HTMLQuoteElement(this);break;
+        case "BODY":
+            node = new HTMLBodyElement(this);break;
+        case "BR":
+            node = new HTMLBRElement(this);break;
+        case "BUTTON":
+            node = new HTMLButtonElement(this);break;
+        case "CAPTION":
+            node = new HTMLElement(this);break;
+        case "COL":
+            node = new HTMLTableColElement(this);break;
+        case "COLGROUP":
+            node = new HTMLTableColElement(this);break;
+        case "DEL":
+            node = new HTMLModElement(this);break;
+        case "INS":
+            node = new HTMLModElement(this);break;
+        case "DIV":
+            node = new HTMLDivElement(this);break;
+        case "DL":
+            node = new HTMLDListElement(this);break;
+        case "DT":
+            node = new HTMLElement(this); break;
+        case "FIELDSET":
+            node = new HTMLFieldSetElement(this);break;
+        case "FORM":
+            node = new HTMLFormElement(this);break;
+        case "FRAME":
+            node = new HTMLFrameElement(this);break;
+        case "H1":
+            node = new HTMLHeadingElement(this);break;
+        case "H2":
+            node = new HTMLHeadingElement(this);break;
+        case "H3":
+            node = new HTMLHeadingElement(this);break;
+        case "H4":
+            node = new HTMLHeadingElement(this);break;
+        case "H5":
+            node = new HTMLHeadingElement(this);break;
+        case "H6":
+            node = new HTMLHeadingElement(this);break;
+        case "HEAD":
+            node = new HTMLHeadElement(this);break;
+        case "HR":
+            node = new HTMLHRElement(this);break;
+        case "HTML":
+            node = new HTMLHtmlElement(this);break;
+        case "IFRAME":
+            node = new HTMLIFrameElement(this);break;
+        case "IMG":
+            node = new HTMLImageElement(this);break;
+        case "INPUT":
+            node = new HTMLInputElement(this);break;
+        case "LABEL":
+            node = new HTMLLabelElement(this);break;
+        case "LEGEND":
+            node = new HTMLLegendElement(this);break;
+        case "LI":
+            node = new HTMLLIElement(this);break;
+        case "LINK":
+            node = new HTMLLinkElement(this);break;
+        case "MAP":
+            node = new HTMLMapElement(this);break;
+        case "META":
+            node = new HTMLMetaElement(this);break;
+        case "NOSCRIPT":
+            node = new HTMLElement(this);break;
+        case "OBJECT":
+            node = new HTMLObjectElement(this);break;
+        case "OPTGROUP":
+            node = new HTMLOptGroupElement(this);break;
+        case "OL":
+            node = new HTMLOListElement(this); break;
+        case "OPTION":
+            node = new HTMLOptionElement(this);break;
+        case "P":
+            node = new HTMLParagraphElement(this);break;
+        case "PARAM":
+            node = new HTMLParamElement(this);break;
+        case "PRE":
+            node = new HTMLPreElement(this);break;
+        case "SCRIPT":
+            node = new HTMLScriptElement(this);break;
+        case "SELECT":
+            node = new HTMLSelectElement(this);break;
+        case "SMALL":
+            node = new HTMLElement(this);break;
+        case "SPAN":
+            node = new HTMLSpanElement(this);break;
+        case "STRONG":
+            node = new HTMLElement(this);break;
+        case "STYLE":
+            node = new HTMLStyleElement(this);break;
+        case "TABLE":
+            node = new HTMLTableElement(this);break;
+        case "TBODY":
+            node = new HTMLTableSectionElement(this);break;
+        case "TFOOT":
+            node = new HTMLTableSectionElement(this);break;
+        case "THEAD":
+            node = new HTMLTableSectionElement(this);break;
+        case "TD":
+            node = new HTMLTableDataCellElement(this);break;
+        case "TH":
+            node = new HTMLTableHeaderCellElement(this);break;
+        case "TEXTAREA":
+            node = new HTMLTextAreaElement(this);break;
+        case "TITLE":
+            node = new HTMLTitleElement(this);break;
+        case "TR":
+            node = new HTMLTableRowElement(this);break;
+        case "UL":
+            node = new HTMLUListElement(this);break;
+        default:
+            node = new HTMLUnknownElement(this);
         }
         // assign values to properties (and aliases)
         node.nodeName  = tagName;
@@ -5662,20 +6690,29 @@ __extend__(HTMLDocument.prototype, {
     },
     get anchors(){
         return new HTMLCollection(this.getElementsByTagName('a'));
-        
     },
     get applets(){
         return new HTMLCollection(this.getElementsByTagName('applet'));
-        
+    },
+    get documentElement(){
+        var html = Document.prototype.__lookupGetter__('documentElement').apply(this,[]);
+        if( html === null){
+            html = this.createElement('html');
+            this.appendChild(html);
+            html.appendChild(this.createElement('head'));
+            html.appendChild(this.createElement('body'));
+        }
+        return html;
     },
     //document.head is non-standard
     get head(){
         //console.log('get head');
-        if(!this.documentElement)
+        if (!this.documentElement) {
             this.appendChild(this.createElement('html'));
+        }
         var element = this.documentElement,
-            length = element.childNodes.length,
-            i;
+        length = element.childNodes.length,
+        i;
         //check for the presence of the head element in this html doc
         for(i=0;i<length;i++){
             if(element.childNodes[i].nodeType === Node.ELEMENT_NODE){
@@ -5690,12 +6727,13 @@ __extend__(HTMLDocument.prototype, {
     },
     get title(){
         //console.log('get title');
-        if(!this.documentElement)
+        if (!this.documentElement) {
             this.appendChild(this.createElement('html'));
+        }
         var title,
-            head = this.head,
-            length = head.childNodes.length,
-            i;
+        head = this.head,
+        length = head.childNodes.length,
+        i;
         //check for the presence of the title element in this head element
         for(i=0;i<length;i++){
             if(head.childNodes[i].nodeType === Node.ELEMENT_NODE){
@@ -5710,20 +6748,22 @@ __extend__(HTMLDocument.prototype, {
     },
     set title(titleStr){
         //console.log('set title %s', titleStr);
-        if(!this.documentElement)
+        if (!this.documentElement) {
             this.appendChild(this.createElement('html'));
+        }
         var title = this.title;
         title.textContent = titleStr;
     },
 
-    get body(){ 
+    get body(){
         //console.log('get body');
-        if(!this.documentElement)
+        if (!this.documentElement) {
             this.appendChild(this.createElement('html'));
+        }
         var body,
-            element = this.documentElement,
-            length = element.childNodes.length,
-            i;
+        element = this.documentElement,
+        length = element.childNodes.length,
+        i;
         //check for the presence of the head element in this html doc
         for(i=0;i<length;i++){
             if(element.childNodes[i].nodeType === Node.ELEMENT_NODE){
@@ -5737,93 +6777,142 @@ __extend__(HTMLDocument.prototype, {
     },
     set body(){console.log('set body');/**in firefox this is a benevolent do nothing*/},
     get cookie(){
-        return Cookies.get(this);
+        return Envjs.getCookies(this.location+'');
     },
     set cookie(cookie){
-        return Cookies.set(this, cookie);
+        return Envjs.setCookie(this.location+'', cookie);
     },
-    get location(){
-        return this.baseURI;
+
+    /**
+     * document.location
+     *
+     * should be identical to window.location
+     *
+     * HTML5:
+     * http://dev.w3.org/html5/spec/Overview.html#the-location-interface
+     *
+     * Mozilla MDC:
+     * https://developer.mozilla.org/en/DOM/document.location
+     *
+     */
+    get location() {
+        if (this.ownerWindow) {
+            return this.ownerWindow.location;
+        } else {
+            return this.baseURI;
+        }
     },
-    set location(url){
+    set location(url) {
         this.baseURI = url;
+        if (this.ownerWindow) {
+            this.ownerWindow.location = url;
+        }
     },
+
+    /**
+     * document.URL (read-only)
+     *
+     * HTML DOM Level 2:
+     * http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-46183437
+     *
+     * HTML5:
+     * http://dev.w3.org/html5/spec/Overview.html#dom-document-url
+     *
+     * Mozilla MDC:
+     * https://developer.mozilla.org/en/DOM/document.URL
+     */
+    get URL() {
+        return this.location;
+    },
+    set URL(url) {
+        this.location = url;
+    },
+
+    /**
+     * document.domain
+     *
+     * HTML5 Spec:
+     * http://dev.w3.org/html5/spec/Overview.html#dom-document-domain
+     *
+     * Mozilla MDC:
+     * https://developer.mozilla.org/en/DOM/document.domain
+     *
+     */
     get domain(){
         var HOSTNAME = new RegExp('\/\/([^\:\/]+)'),
-            matches = HOSTNAME.exec(this.baseURI);
+        matches = HOSTNAME.exec(this.baseURI);
         return matches&&matches.length>1?matches[1]:"";
     },
     set domain(value){
         var i,
-            domainParts = this.domain.splt('.').reverse(),
-            newDomainParts = value.split('.').reverse();
+        domainParts = this.domain.split('.').reverse(),
+        newDomainParts = value.split('.').reverse();
         if(newDomainParts.length > 1){
             for(i=0;i<newDomainParts.length;i++){
-                if(!(newDomainParts[i] == domainParts[i])){
+                if(!(newDomainParts[i] === domainParts[i])){
                     return;
                 }
             }
             this.baseURI = this.baseURI.replace(domainParts.join('.'), value);
         }
     },
+
     get forms(){
-      return new HTMLCollection(this.getElementsByTagName('form'));
+        return new HTMLCollection(this.getElementsByTagName('form'));
     },
     get images(){
         return new HTMLCollection(this.getElementsByTagName('img'));
     },
-    get lastModified(){ 
+    get lastModified(){
         /* TODO */
-        return this._lastModified; 
+        return this._lastModified;
     },
     get links(){
         return new HTMLCollection(this.getElementsByTagName('a'));
     },
-	getElementsByName : function(name){
+    getElementsByName : function(name){
         //returns a real Array + the NodeList
         var retNodes = __extend__([],new NodeList(this, this.documentElement)),
-          node;
-        // loop through all Elements in the 'all' collection
-        var all = this.all;
+        node;
+        // loop through all Elements
+        var all = this.getElementsByTagName('*');
         for (var i=0; i < all.length; i++) {
             node = all[i];
-            if (node.nodeType == Node.ELEMENT_NODE && 
+            if (node.nodeType === Node.ELEMENT_NODE &&
                 node.getAttribute('name') == name) {
                 retNodes.push(node);
             }
         }
         return retNodes;
-	},
-	toString: function(){ 
-	    return "[object HTMLDocument]"; 
     },
-	get innerHTML(){ 
-	    return this.documentElement.outerHTML; 
+    toString: function(){
+        return "[object HTMLDocument]";
     },
-    get URL(){ 
-        return this.location;  
-    },
-    set URL(url){
-        this.location = url;  
+    get innerHTML(){
+        return this.documentElement.outerHTML;
     }
 });
 
 
-Aspect.around({ 
-    target: Node,  
+
+Aspect.around({
+    target: Node,
     method:"appendChild"
 }, function(invocation) {
     var event,
-        okay,
-        node = invocation.proceed(),
-        doc = node.ownerDocument;
+    okay,
+    node = invocation.proceed(),
+    doc = node.ownerDocument;
+
+    //console.log('element appended: %s %s %s', node+'', node.nodeName, node.namespaceURI);
     if((node.nodeType !== Node.ELEMENT_NODE)){
-        //for now we are only handling element insertions.  probably we will need
-        //to handle text node changes to script tags and changes to src 
-        //attributes
+        //for now we are only handling element insertions.  probably
+        //we will need to handle text node changes to script tags and
+        //changes to src attributes
         return node;
     }
-    //console.log('appended html element %s %s %s', node.namespaceURI, node.nodeName, node);
+    //console.log('appended html element %s %s %s',
+    //             node.namespaceURI, node.nodeName, node);
     switch(doc.parsing){
         case true:
             //handled by parser if included
@@ -5837,96 +6926,102 @@ Aspect.around({
                     //fall through
                 case "http://www.w3.org/1999/xhtml":
                     switch(node.tagName.toLowerCase()){
-                        case 'script':
-                            if((this.nodeName.toLowerCase() == 'head')){
-                                try{
-                                    okay = Envjs.loadLocalScript(node, null);
-                                    //console.log('loaded script? %s %s', node.uuid, okay);
-                                    // only fire event if we actually had something to load
-                                    if (node.src && node.src.length > 0){
-                                        event = doc.createEvent('HTMLEvents');
-                                        event.initEvent( okay ? "load" : "error", false, false );
-                                        node.dispatchEvent( event, false );
-                                    }
-                                }catch(e){
-                                    console.log('error loading html element %s %e', node, e.toString());
-                                }
-                            }
-                            break;
-                        case 'frame':
-                        case 'iframe':
-                            node.contentWindow = { };
-                            node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
-                            node.contentWindow.document = node.contentDocument;
+                    case 'style':
+                        document.styleSheets.push(CSSStyleSheet(node));
+                        break;
+                    case 'script':
+                        if((this.nodeName.toLowerCase() === 'head')){
                             try{
-                                Window;
-                            }catch(e){
-                                node.contentDocument.addEventListener('DOMContentLoaded', function(){
-                                    event = node.contentDocument.createEvent('HTMLEvents');
-                                    event.initEvent("load", false, false);
-                                    node.dispatchEvent( event, false );
-                                });
-                            }
-                            try{
+                                okay = Envjs.loadLocalScript(node, null);
+                                //console.log('loaded script? %s %s', node.uuid, okay);
+                                // only fire event if we actually had something to load
                                 if (node.src && node.src.length > 0){
-                                    //console.log("getting content document for (i)frame from %s", node.src);
-                                    Envjs.loadFrame(node, Envjs.uri(node.src));
-                                    event = node.contentDocument.createEvent('HTMLEvents');
-                                    event.initEvent("load", false, false);
+                                    event = doc.createEvent('HTMLEvents');
+                                    event.initEvent( okay ? "load" : "error", false, false );
                                     node.dispatchEvent( event, false );
-                                }else{
-                                    //I dont like this being here:
-                                    //TODO: better  mix-in strategy so the try/catch isnt required
-                                    try{
-                                        if(Window){
-                                            Envjs.loadFrame(node);
-                                            //console.log('src/html/document.js: triggering frame load');
-                                            event = node.contentDocument.createEvent('HTMLEvents');
-                                            event.initEvent("load", false, false);
-                                            node.dispatchEvent( event, false );
-                                        }
-                                    }catch(e){}
                                 }
                             }catch(e){
                                 console.log('error loading html element %s %e', node, e.toString());
                             }
-                            break;
-                        case 'link':
-                            if (node.href && node.href.length > 0){
-                                // don't actually load anything, so we're "done" immediately:
-                                event = doc.createEvent('HTMLEvents');
+                        }
+                        break;
+                    case 'frame':
+                    case 'iframe':
+                        node.contentWindow = { };
+                        node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
+                        node.contentWindow.document = node.contentDocument;
+                        try{
+                            Window;
+                        }catch(e){
+                            node.contentDocument.addEventListener('DOMContentLoaded', function(){
+                                event = node.contentDocument.createEvent('HTMLEvents');
                                 event.initEvent("load", false, false);
                                 node.dispatchEvent( event, false );
-                            }
-                            break;
-                        case 'img':
+                            });
+                        }
+                        try{
                             if (node.src && node.src.length > 0){
-                                // don't actually load anything, so we're "done" immediately:
-                                event = doc.createEvent('HTMLEvents');
+                                //console.log("getting content document for (i)frame from %s", node.src);
+                                Envjs.loadFrame(node, Envjs.uri(node.src));
+                                event = node.contentDocument.createEvent('HTMLEvents');
                                 event.initEvent("load", false, false);
                                 node.dispatchEvent( event, false );
+                            }else{
+                                //I dont like this being here:
+                                //TODO: better  mix-in strategy so the try/catch isnt required
+                                try{
+                                    if(Window){
+                                        Envjs.loadFrame(node);
+                                        //console.log('src/html/document.js: triggering frame load');
+                                        event = node.contentDocument.createEvent('HTMLEvents');
+                                        event.initEvent("load", false, false);
+                                        node.dispatchEvent( event, false );
+                                    }
+                                }catch(e){}
                             }
-                            break;
-                        default:
-                            if(node.getAttribute('onload')){
-                                console.log('calling attribute onload %s | %s', node.onload, node.tagName);
-                                node.onload();
-                            }
-                            break;
+                        }catch(e){
+                            console.log('error loading html element %s %e', node, e.toString());
+                        }
+                        break;
+        
+                    case 'link':
+                        if (node.href && node.href.length > 0) {
+                            __loadLink__(node, node.href);
+                        }
+                        break;
+                        /*
+                          case 'img':
+                          if (node.src && node.src.length > 0){
+                          // don't actually load anything, so we're "done" immediately:
+                          event = doc.createEvent('HTMLEvents');
+                          event.initEvent("load", false, false);
+                          node.dispatchEvent( event, false );
+                          }
+                          break;
+                        */
+                    case 'option':
+                        node._updateoptions();
+                        break;
+                    default:
+                        if(node.getAttribute('onload')){
+                            console.log('calling attribute onload %s | %s', node.onload, node.tagName);
+                            node.onload();
+                        }
+                        break;
                     }//switch on name
                 default:
                     break;
             }//switch on ns
             break;
-        default: 
-            console.log('element appended: %s %s', node+'', node.namespaceURI);
+        default:
+            // console.log('element appended: %s %s', node+'', node.namespaceURI);
     }//switch on doc.parsing
     return node;
 
 });
 
-Aspect.around({ 
-    target: Node,  
+Aspect.around({
+    target: Node,
     method:"removeChild"
 }, function(invocation) {
     var event,
@@ -5935,7 +7030,7 @@ Aspect.around({
         doc = node.ownerDocument;
     if((node.nodeType !== Node.ELEMENT_NODE)){
         //for now we are only handling element insertions.  probably we will need
-        //to handle text node changes to script tags and changes to src 
+        //to handle text node changes to script tags and changes to src
         //attributes
         if(node.nodeType !== Node.DOCUMENT_NODE && node.uuid){
             //console.log('removing event listeners, %s', node, node.uuid);
@@ -5944,49 +7039,49 @@ Aspect.around({
         return node;
     }
     //console.log('appended html element %s %s %s', node.namespaceURI, node.nodeName, node);
-    
+
     switch(doc.parsing){
         case true:
             //handled by parser if included
             break;
         case false:
             switch(node.namespaceURI){
-                case null:
-                    //fall through
-                case "":
-                    //fall through
-                case "http://www.w3.org/1999/xhtml":
-                    //this is interesting dillema since our event engine is
-                    //storing the registered events in an array accessed
-                    //by the uuid property of the node.  unforunately this
-                    //means listeners hang out way after(forever ;)) the node
-                    //has been removed and gone out of scope.
-                    //console.log('removing event listeners, %s', node, node.uuid);
-                    node.removeEventListener('*', null, null);
-                    switch(node.tagName.toLowerCase()){
-                        case 'frame':
-                        case 'iframe':
-                            try{
-                                //console.log('removing iframe document');
-                                try{
-                                    Envjs.unloadFrame(node);
-                                }catch(e){
-                                    console.log('error freeing resources from frame %s', e);
-                                }
-                                node.contentWindow = null;
-                                node.contentDocument = null;
-                            }catch(e){
-                                console.log('error unloading html element %s %e', node, e.toString());
-                            }
-                            break;
-                        default:
-                            break;
-                    }//switch on name
+            case null:
+                //fall through
+            case "":
+                //fall through
+            case "http://www.w3.org/1999/xhtml":
+                //this is interesting dillema since our event engine is
+                //storing the registered events in an array accessed
+                //by the uuid property of the node.  unforunately this
+                //means listeners hang out way after(forever ;)) the node
+                //has been removed and gone out of scope.
+                //console.log('removing event listeners, %s', node, node.uuid);
+                node.removeEventListener('*', null, null);
+                switch(node.tagName.toLowerCase()){
+                case 'frame':
+                case 'iframe':
+                    try{
+                        //console.log('removing iframe document');
+                        try{
+                            Envjs.unloadFrame(node);
+                        }catch(e){
+                            console.log('error freeing resources from frame %s', e);
+                        }
+                        node.contentWindow = null;
+                        node.contentDocument = null;
+                    }catch(e){
+                        console.log('error unloading html element %s %e', node, e.toString());
+                    }
+                    break;
                 default:
                     break;
+                }//switch on name
+            default:
+                break;
             }//switch on ns
             break;
-        default: 
+        default:
             console.log('element appended: %s %s', node+'', node.namespaceURI);
     }//switch on doc.parsing
     return node;
@@ -5994,11 +7089,86 @@ Aspect.around({
 });
 
 
+
+/**
+ * Named Element Support
+ *
+ *
+ */
+
+/*
+ *
+ * @returns 'name' if the node has a appropriate name
+ *          null if node does not have a name
+ */
+
+var __isNamedElement__ = function(node) {
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+        return null;
+    }
+    var tagName = node.tagName.toLowerCase();
+    var nodename = null;
+
+    switch (tagName) {
+        case 'embed':
+        case 'form':
+        case 'iframe':
+            nodename = node.getAttribute('name');
+            break;
+        case 'applet':
+            nodename = node.id;
+            break;
+        case 'object':
+            // TODO: object needs to be 'fallback free'
+            nodename = node.id;
+            break;
+        case 'img':
+            nodename = node.id;
+            if (!nodename || ! node.getAttribute('name')) {
+                nodename = null;
+            }
+            break;
+    }
+    return (nodename) ? nodename : null;
+};
+
+
+var __addNamedMap__ = function(target, node) {
+    var nodename = __isNamedElement__(node);
+    if (nodename) {
+        target.__defineGetter__(nodename, function() {
+            return node;
+        });
+    }
+};
+
+var __removeNamedMap__ = function(target, node) {
+    if (!node) {
+        return;
+    }
+    var nodename = __isNamedElement__(node);
+    if (nodename) {
+        delete target[nodename];
+    }
+};
+    
 /**
  * @name HTMLEvents
- * @w3c:domlevel 2 
+ * @w3c:domlevel 2
  * @uri http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html
  */
+
+var __eval__ = function(script, node){
+    if (!script == ""){
+        // don't assemble environment if no script...
+        try{
+            eval(script);
+        }catch(e){
+            console.log('error evaluating %s', e);
+        }
+    }
+};
+
 var HTMLEvents= function(){};
 HTMLEvents.prototype = {
     onload: function(event){
@@ -6041,20 +7211,6 @@ HTMLEvents.prototype = {
     }
 };
 
-
-var __eval__ = function(script, node){
-    if (!script == ""){
-        // don't assemble environment if no script...
-        try{
-            eval(script);
-        }catch(e){
-            console.log('error evaluating %s', e);
-        }               
-    }
-};
-
-
-
 //HTMLDocument, HTMLFramesetElement, HTMLObjectElement
 var  __load__ = function(element){
     var event = new Event('HTMLEvents');
@@ -6079,7 +7235,7 @@ var  __abort__ = function(element){
     return event;
 };
 
-//HTMLFramesetElement, HTMLObjectElement, HTMLBodyElement 
+//HTMLFramesetElement, HTMLObjectElement, HTMLBodyElement
 var  __error__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("error", true, false);
@@ -6304,47 +7460,78 @@ var  __mouseout__ = function(element){
 };
 
 /**
-* HTMLElement - DOM Level 2
-*/
+ * HTMLElement - DOM Level 2
+ */
+
+
+/* Hack for http://www.prototypejs.org/
+ *
+ * Prototype 1.6 (the library) creates a new global Element, which causes
+ * envjs to use the wrong Element.
+ *
+ * http://envjs.lighthouseapp.com/projects/21590/tickets/108-prototypejs-wont-load-due-it-clobbering-element
+ *
+ * Options:
+ *  (1) Rename the dom/element to something else
+ *       rejected: been done before. people want Element.
+ *  (2) merge dom+html and not export Element to global namespace
+ *      (meaning we would use a local var Element in a closure, so prototype
+ *      can do what ever it wants)
+ *       rejected: want dom and html separate
+ *  (3) use global namespace (put everything under Envjs = {})
+ *       rejected: massive change
+ *  (4) use commonjs modules (similar to (3) in spirit)
+ *       rejected: massive change
+ *
+ *  or
+ *
+ *  (5) take a reference to Element during initial loading ("compile
+ *      time"), and use the reference instead of "Element".  That's
+ *      what the next line does.  We use __DOMElement__ if we need to
+ *      reference the parent class.  Only this file explcity uses
+ *      Element so this should work, and is the most minimal change I
+ *      could think of with no external API changes.
+ *
+ */
+var  __DOMElement__ = Element;
+
 HTMLElement = function(ownerDocument) {
-    Element.apply(this, arguments);
+    __DOMElement__.apply(this, arguments);
 };
-HTMLElement.prototype = new Element;
-//TODO: Not sure where HTMLEvents belongs in the chain
-//      but putting it here satisfies a lowest common 
-//      denominator.
+
+HTMLElement.prototype = new Element();
 __extend__(HTMLElement.prototype, HTMLEvents.prototype);
 __extend__(HTMLElement.prototype, {
-	get className() { 
-	    return this.getAttribute("class")||''; 
+    get className() {
+        return this.getAttribute("class")||'';
     },
-	set className(value) { 
-	    return this.setAttribute("class",__trim__(value)); 
+    set className(value) {
+        return this.setAttribute("class",__trim__(value));
     },
-	get dir() { 
-	    return this.getAttribute("dir")||"ltr"; 
+    get dir() {
+        return this.getAttribute("dir")||"ltr";
     },
-	set dir(val) { 
-	    return this.setAttribute("dir",val); 
+    set dir(val) {
+        return this.setAttribute("dir",val);
     },
-	get id(){  
-	    return this.getAttribute('id'); 
+    get id(){
+        return this.getAttribute('id');
     },
-	set id(id){  
-	    this.setAttribute('id', id); 
+    set id(id){
+        this.setAttribute('id', id);
     },
-	get innerHTML(){  
-	    var ret = "",
-            i;
-        
-        // create string containing the concatenation of the string 
+    get innerHTML(){
+        var ret = "",
+        i;
+
+        // create string containing the concatenation of the string
         // values of each child
         for (i=0; i < this.childNodes.length; i++) {
             if(this.childNodes[i]){
                 if(this.childNodes[i].nodeType === Node.ELEMENT_NODE){
                     ret += this.childNodes[i].xhtml;
-                }else if(this.childNodes[i].nodeType == Node.TEXT_NODE && i>0 && 
-                    this.childNodes[i-1].nodeType == Node.TEXT_NODE){
+                } else if (this.childNodes[i].nodeType === Node.TEXT_NODE && i>0 &&
+                           this.childNodes[i-1].nodeType === Node.TEXT_NODE){
                     //add a single space between adjacent text nodes
                     ret += " "+this.childNodes[i].xml;
                 }else{
@@ -6354,42 +7541,42 @@ __extend__(HTMLElement.prototype, {
         }
         return ret;
     },
-	get lang() { 
-	    return this.getAttribute("lang"); 
+    get lang() {
+        return this.getAttribute("lang");
     },
-	set lang(val) { 
-	    return this.setAttribute("lang",val); 
+    set lang(val) {
+        return this.setAttribute("lang",val);
     },
-	get offsetHeight(){
-	    return Number((this.style["height"]||'').replace("px",""));
-	},
-	get offsetWidth(){
-	    return Number((this.style["width"]||'').replace("px",""));
-	},
-	offsetLeft: 0,
-	offsetRight: 0,
-	get offsetParent(){
-	    /* TODO */
-	    return;
+    get offsetHeight(){
+        return Number((this.style.height || '').replace("px",""));
     },
-	set offsetParent(element){
-	    /* TODO */
-	    return;
+    get offsetWidth(){
+        return Number((this.style.width || '').replace("px",""));
     },
-	scrollHeight: 0,
-	scrollWidth: 0,
-	scrollLeft: 0, 
-	scrollRight: 0,
-	get style(){
+    offsetLeft: 0,
+    offsetRight: 0,
+    get offsetParent(){
+        /* TODO */
+        return;
+    },
+    set offsetParent(element){
+        /* TODO */
+        return;
+    },
+    scrollHeight: 0,
+    scrollWidth: 0,
+    scrollLeft: 0,
+    scrollRight: 0,
+    get style(){
         return this.getAttribute('style')||'';
-	},
-	get title() { 
-	    return this.getAttribute("title"); 
     },
-	set title(value) { 
-	    return this.setAttribute("title", value);
+    get title() {
+        return this.getAttribute("title");
     },
-	get tabIndex(){
+    set title(value) {
+        return this.setAttribute("title", value);
+    },
+    get tabIndex(){
         var tabindex = this.getAttribute('tabindex');
         if(tabindex!==null){
             return Number(tabindex);
@@ -6398,13 +7585,14 @@ __extend__(HTMLElement.prototype, {
         }
     },
     set tabIndex(value){
-        if(value===undefined||value===null)
+        if (value === undefined || value === null) {
             value = 0;
+        }
         this.setAttribute('tabindex',Number(value));
     },
-	get outerHTML(){ 
+    get outerHTML(){
         //Not in the specs but I'll leave it here for now.
-	    return this.xhtml; 
+        return this.xhtml;
     },
     scrollIntoView: function(){
         /*TODO*/
@@ -6415,12 +7603,12 @@ __extend__(HTMLElement.prototype, {
     },
     get xhtml() {
         // HTMLDocument.xhtml is non-standard
-        // This is exactly like Document.xml except the tagName has to be 
+        // This is exactly like Document.xml except the tagName has to be
         // lower cased.  I dont like to duplicate this but its really not
         // a simple work around between xml and html serialization via
         // XMLSerializer (which uppercases html tags) and innerHTML (which
         // lowercases tags)
-        
+
         var ret = "",
             ns = "",
             name = (this.tagName+"").toLowerCase(),
@@ -6431,89 +7619,197 @@ __extend__(HTMLElement.prototype, {
         // serialize namespace declarations
         if (this.namespaceURI){
             if((this === this.ownerDocument.documentElement) ||
-                (!this.parentNode)||
-                (this.parentNode && 
-                (this.parentNode.namespaceURI !== this.namespaceURI)))
-                ns = ' xmlns'+(this.prefix?(':'+this.prefix):'')+
-                    '="'+this.namespaceURI+'"';
+               (!this.parentNode) ||
+               (this.parentNode &&
+                (this.parentNode.namespaceURI !== this.namespaceURI))) {
+                ns = ' xmlns' + (this.prefix ? (':' + this.prefix) : '') +
+                    '="' + this.namespaceURI + '"';
+            }
         }
-        
+
         // serialize Attribute declarations
         attrs = this.attributes;
         for(i=0;i< attrs.length;i++){
             attrstring += " "+attrs[i].name+'="'+attrs[i].xml+'"';
         }
-        
+
         if(this.hasChildNodes()){
             // serialize this Element
             ret += "<" + name + ns + attrstring +">";
             for(i=0;i< this.childNodes.length;i++){
                 ret += this.childNodes[i].xhtml ?
-                           this.childNodes[i].xhtml : 
-                           this.childNodes[i].xml
+                    this.childNodes[i].xhtml :
+                    this.childNodes[i].xml;
             }
             ret += "</" + name + ">";
         }else{
             switch(name){
-                case 'script':
-                    ret += "<" + name + ns + attrstring +"></"+name+">";
-                default:
-                    ret += "<" + name + ns + attrstring +"/>";
+            case 'script':
+                ret += "<" + name + ns + attrstring +"></"+name+">";
+                break;
+            default:
+                ret += "<" + name + ns + attrstring +"/>";
             }
         }
-        
+
         return ret;
+    },
+
+    /**
+     * setAttribute use a dispatch table that other tags can set to
+     *  "listen" to various values being set.  The dispatch table
+     * and registration functions are at the end of the file.
+     *
+     */
+
+    setAttribute: function(name, value) {
+        var result = __DOMElement__.prototype.setAttribute.apply(this, arguments);
+        __addNamedMap__(this.ownerDocument, this);
+        var tagname = this.tagName;
+        var callback = HTMLElement.getAttributeCallback('set', tagname, name);
+        if (callback) {
+            callback(this, value);
+        }
+    },
+    setAttributeNS: function(namespaceURI, name, value) {
+        var result = __DOMElement__.prototype.setAttributeNS.apply(this, arguments);
+        __addNamedMap__(this.ownerDocument, this);
+        var tagname = this.tagName;
+        var callback = HTMLElement.getAttributeCallback('set', tagname, name);
+        if (callback) {
+            callback(this, value);
+        }
+
+        return result;
+    },
+    setAttributeNode: function(newnode) {
+        var result = __DOMElement__.prototype.setAttributeNode.apply(this, arguments);
+        __addNamedMap__(this.ownerDocument, this);
+        var tagname = this.tagName;
+        var callback = HTMLElement.getAttributeCallback('set', tagname, newnode.name);
+        if (callback) {
+            callback(this, node.value);
+        }
+        return result;
+    },
+    setAttributeNodeNS: function(newnode) {
+        var result = __DOMElement__.prototype.setAttributeNodeNS.apply(this, arguments);
+        __addNamedMap__(this.ownerDocument, this);
+        var tagname = this.tagName;
+        var callback = HTMLElement.getAttributeCallback('set', tagname, newnode.name);
+        if (callback) {
+            callback(this, node.value);
+        }
+        return result;
+    },
+    removeAttribute: function(name) {
+        __removeNamedMap__(this.ownerDocument, this);
+        return __DOMElement__.prototype.removeAttribute.apply(this, arguments);
+    },
+    removeAttributeNS: function(namespace, localname) {
+        __removeNamedMap__(this.ownerDocument, this);
+        return __DOMElement__.prototype.removeAttributeNS.apply(this, arguments);
+    },
+    removeAttributeNode: function(name) {
+        __removeNamedMap__(this.ownerDocument, this);
+        return __DOMElement__.prototype.removeAttribute.apply(this, arguments);
+    },
+    removeChild: function(oldChild) {
+        __removeNamedMap__(this.ownerDocument, oldChild);
+        return __DOMElement__.prototype.removeChild.apply(this, arguments);
+    },
+    importNode: function(othernode, deep) {
+        var newnode = __DOMElement__.prototype.importNode.apply(this, arguments);
+        __addNamedMap__(this.ownerDocument, newnode);
+        return newnode;
+    },
+
+    // not actually sure if this is needed or not
+    replaceNode: function(newchild, oldchild) {
+        var newnode = __DOMElement__.prototype.replaceNode.apply(this, arguments);
+        __removeNamedMap__(this.ownerDocument, oldchild);
+        __addNamedMap__(this.ownerDocument, newnode);
+                return newnode;
     }
 });
 
 
-/*
-* HTMLCollection - DOM Level 2
-* Implementation Provided by Steven Wood
-*/
-HTMLCollection = function(nodelist, type){
-
-    __setArray__(this, []);
-    for (var i=0; i<nodelist.length; i++) {
-        this[i] = nodelist[i];
-        if('name' in nodelist[i]){
-            this[nodelist[i].name] = nodelist[i];
-        }
-    }
-    
-    this.length = nodelist.length;
-
-}
-
-HTMLCollection.prototype = {
-        
-    item : function (idx) {
-        var ret = null;
-        if ((idx >= 0) && (idx < this.length)) { 
-            ret = this[idx];                    
-        }
-    
-        return ret;   
-    },
-    
-    namedItem : function (name) {
-        if(name in this){
-            return this[name];
-        }
-        return null;
-    }
+HTMLElement.attributeCallbacks = {};
+HTMLElement.registerSetAttribute = function(tag, attrib, callbackfn) {
+    HTMLElement.attributeCallbacks[tag + ':set:' + attrib] = callbackfn;
+};
+HTMLElement.registerRemoveAttribute = function(tag, attrib, callbackfn) {
+    HTMLElement.attributeCallbacks[tag + ':remove:' + attrib] = callbackfn;
 };
 
+/**
+ * This is really only useful internally
+ *
+ */
+HTMLElement.getAttributeCallback = function(type, tag, attrib) {
+    return HTMLElement.attributeCallbacks[tag + ':' + type + ':' + attrib] || null;
+};
+/*
+ * HTMLCollection
+ *
+ * HTML5 -- 2.7.2.1 HTMLCollection
+ * http://dev.w3.org/html5/spec/Overview.html#htmlcollection
+ * http://dev.w3.org/html5/spec/Overview.html#collections
+ */
+HTMLCollection = function(nodelist, type) {
 
+    __setArray__(this, []);
+    var n;
+    for (var i=0; i<nodelist.length; i++) {
+        this[i] = nodelist[i];
+        n = nodelist[i].name;
+        if (n) {
+            this[n] = nodelist[i];
+        }
+        n = nodelist[i].id;
+        if (n) {
+            this[n] = nodelist[i];
+        }
+    }
 
+    this.length = nodelist.length;
+};
 
-	/*
+HTMLCollection.prototype = {
+
+    item: function (idx) {
+        return  ((idx >= 0) && (idx < this.length)) ? this[idx] : null;
+    },
+
+    namedItem: function (name) {
+        return this[name] || null;
+    },
+
+    toString: function() {
+        return '[object HTMLCollection]';
+    }
+};
+/*
  *  a set of convenience classes to centralize implementation of
  * properties and methods across multiple in-form elements
  *
  *  the hierarchy of related HTML elements and their members is as follows:
  *
+ * Condensed Version
  *
+ *  HTMLInputCommon
+ *     * legent (no value attr)
+ *     * fieldset (no value attr)
+ *     * label (no value attr)
+ *     * option (custom value)
+ *  HTMLTypeValueInputs (extends InputCommon)
+ *     * select  (custom value)
+ *     * button (just sets value)
+ *  HTMLInputAreaCommon (extends TypeValueIput)
+ *     * input  (custom)
+ *     * textarea (just sets value)
+ *
+ * -----------------------
  *    HTMLInputCommon:  common to all elements
  *       .form
  *
@@ -6542,7 +7838,7 @@ HTMLCollection.prototype = {
  *       .selected
  *       .text
  *       .value   // unique implementation, not duplicated
- *
+ *       .form    // unique implementation, not duplicated
  *  ****
  *
  *    HTMLTypeValueInputs:  common to remaining elements
@@ -6633,7 +7929,7 @@ var inputElements_status = {};
 
 var inputElements_onchange = {
     onchange: function(event){
-        __eval__(this.getAttribute('onchange')||'', this)
+        __eval__(this.getAttribute('onchange')||'', this);
     }
 };
 
@@ -6669,11 +7965,13 @@ var inputElements_focusEvents = {
 var HTMLInputCommon = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLInputCommon.prototype = new HTMLElement;
+HTMLInputCommon.prototype = new HTMLElement();
 __extend__(HTMLInputCommon.prototype, {
-    get form(){
+    get form() {
+        // parent can be null if element is outside of a form
+        // or not yet added to the document
         var parent = this.parentNode;
-        while(parent.nodeName.toLowerCase() != 'form'){
+        while (parent && parent.nodeName.toLowerCase() !== 'form') {
             parent = parent.parentNode;
         }
         return parent;
@@ -6691,7 +7989,7 @@ __extend__(HTMLInputCommon.prototype, {
         this.setAttribute('access', value);
     },
     get disabled(){
-        return (this.getAttribute('disabled')=='disabled');
+        return (this.getAttribute('disabled') === 'disabled');
     },
     set disabled(value){
         this.setAttribute('disabled', (value ? 'disabled' :''));
@@ -6705,54 +8003,22 @@ __extend__(HTMLInputCommon.prototype, {
 * HTMLTypeValueInputs - convenience class, not DOM
 */
 var HTMLTypeValueInputs = function(ownerDocument) {
-    
+
     HTMLInputCommon.apply(this, arguments);
 
     this._oldValue = "";
 };
-HTMLTypeValueInputs.prototype = new HTMLInputCommon;
+HTMLTypeValueInputs.prototype = new HTMLInputCommon();
 __extend__(HTMLTypeValueInputs.prototype, inputElements_size);
 __extend__(HTMLTypeValueInputs.prototype, inputElements_status);
 __extend__(HTMLTypeValueInputs.prototype, inputElements_dataProperties);
 __extend__(HTMLTypeValueInputs.prototype, {
-    get defaultValue(){
-        return this.getAttribute('defaultValue');
-    },
-    set defaultValue(value){
-        this.setAttribute('defaultValue', value);
-    },
     get name(){
         return this.getAttribute('name')||'';
     },
     set name(value){
         this.setAttribute('name',value);
     },
-    get type(){
-        return this.getAttribute('type');
-    },
-    set type(type){
-        return this.setAttribute('type', type);
-    },
-    get value(){
-        return this.getAttribute('value')||'';
-    },
-    set value(newValue){
-        this.setAttribute('value',newValue);
-    },
-    setAttribute: function(name, value){
-        //console.log('setting defaultValue (NS)');
-        if(name == 'value' && !this.defaultValue){
-            this.defaultValue = value;
-        }
-        HTMLElement.prototype.setAttribute.apply(this, [name, value]);
-    },
-    setAttributeNS: function(uri, name, value){
-        //console.log('setting defaultValue (NS)');
-        if(name == 'value' && !this.defaultValue){
-            this.defaultValue = value;
-        }
-        HTMLElement.prototype.setAttributeNS.apply(this, [uri, name, value]);
-    }
 });
 
 
@@ -6762,7 +8028,7 @@ __extend__(HTMLTypeValueInputs.prototype, {
 var HTMLInputAreaCommon = function(ownerDocument) {
     HTMLTypeValueInputs.apply(this, arguments);
 };
-HTMLInputAreaCommon.prototype = new HTMLTypeValueInputs;
+HTMLInputAreaCommon.prototype = new HTMLTypeValueInputs();
 __extend__(HTMLInputAreaCommon.prototype, inputElements_focusEvents);
 __extend__(HTMLInputAreaCommon.prototype, inputElements_onchange);
 __extend__(HTMLInputAreaCommon.prototype, {
@@ -6779,100 +8045,121 @@ __extend__(HTMLInputAreaCommon.prototype, {
 });
 
 
+var __updateFormForNamedElement__ = function(node, value) {
+    if (node.form) {
+        // to check for ID or NAME attribute too
+        // not, then nothing to do
+        node.form._updateElements();
+    }
+};
+
 /**
  * HTMLAnchorElement - DOM Level 2
+ *
+ * HTML5: 4.6.1 The a element
+ * http://dev.w3.org/html5/spec/Overview.html#the-a-element
  */
 HTMLAnchorElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLAnchorElement.prototype = new HTMLElement;
+HTMLAnchorElement.prototype = new HTMLElement();
 __extend__(HTMLAnchorElement.prototype, {
-	get accessKey() { 
-	    return this.getAttribute("accesskey")||''; 
+    get accessKey() {
+        return this.getAttribute("accesskey")||'';
     },
-	set accessKey(val) { 
-	    return this.setAttribute("accesskey",val); 
+    set accessKey(val) {
+        return this.setAttribute("accesskey",val);
     },
-	get charset() { 
-	    return this.getAttribute("charset")||''; 
+    get charset() {
+        return this.getAttribute("charset")||'';
     },
-	set charset(val) { 
-	    return this.setAttribute("charset",val); 
+    set charset(val) {
+        return this.setAttribute("charset",val);
     },
-	get coords() { 
-	    return this.getAttribute("coords")||''; 
+    get coords() {
+        return this.getAttribute("coords")||'';
     },
-	set coords(val) { 
-	    return this.setAttribute("coords",val);
+    set coords(val) {
+        return this.setAttribute("coords",val);
     },
-	get href() { 
-        var location = this.ownerDocument.location+'';
-	    return (location?location.substring(0, location.lastIndexOf('/')):'')+
-            (this.getAttribute("href")||'');
+    get href() {
+        var link = this.getAttribute('href');
+        if (!link) {
+            return '';
+        }
+        return Envjs.uri(link,
+                         this.ownerDocument.location.toString());
     },
-	set href(val) { 
-	    return this.setAttribute("href",val);
+    set href(val) {
+        return this.setAttribute("href", val);
     },
-	get hreflang() { 
-	    return this.getAttribute("hreflang")||'';
+    get hreflang() {
+        return this.getAttribute("hreflang")||'';
     },
-	set hreflang(val) { 
-	    this.setAttribute("hreflang",val);
+    set hreflang(val) {
+        this.setAttribute("hreflang",val);
     },
-	get name() { 
-	    return this.getAttribute("name")||'';
+    get name() {
+        return this.getAttribute("name")||'';
     },
-	set name(val) { 
-	    this.setAttribute("name",val);
+    set name(val) {
+        this.setAttribute("name",val);
     },
-	get rel() { 
-	    return this.getAttribute("rel")||''; 
+    get rel() {
+        return this.getAttribute("rel")||'';
     },
-	set rel(val) { 
-	    return this.setAttribute("rel", val); 
+    set rel(val) {
+        return this.setAttribute("rel", val);
     },
-	get rev() { 
-	    return this.getAttribute("rev")||'';
+    get rev() {
+        return this.getAttribute("rev")||'';
     },
-	set rev(val) { 
-	    return this.setAttribute("rev",val);
+    set rev(val) {
+        return this.setAttribute("rev",val);
     },
-	get shape() { 
-	    return this.getAttribute("shape")||'';
+    get shape() {
+        return this.getAttribute("shape")||'';
     },
-	set shape(val) { 
-	    return this.setAttribute("shape",val);
+    set shape(val) {
+        return this.setAttribute("shape",val);
     },
-	get target() { 
-	    return this.getAttribute("target")||'';
+    get target() {
+        return this.getAttribute("target")||'';
     },
-	set target(val) { 
-	    return this.setAttribute("target",val);
+    set target(val) {
+        return this.setAttribute("target",val);
     },
-	get type() { 
-	    return this.getAttribute("type")||'';
+    get type() {
+        return this.getAttribute("type")||'';
     },
-	set type(val) { 
-	    return this.setAttribute("type",val);
+    set type(val) {
+        return this.setAttribute("type",val);
     },
-	blur:function(){
-	    __blur__(this);
+    blur: function() {
+        __blur__(this);
     },
-	focus:function(){
-	    __focus__(this);
+    focus: function() {
+        __focus__(this);
     },
-    toString: function(){
-        return '[object HTMLAnchorElement]';
+
+    /**
+     * Unlike other elements, toString returns the href
+     */
+    toString: function() {
+        return this.href;
     }
 });
 
-/* 
+/*
  * HTMLAreaElement - DOM Level 2
+ *
+ * HTML5: 4.8.13 The area element
+ * http://dev.w3.org/html5/spec/Overview.html#the-area-element
  */
 HTMLAreaElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLAreaElement.prototype = new HTMLElement;
+HTMLAreaElement.prototype = new HTMLElement();
 __extend__(HTMLAreaElement.prototype, {
     get accessKey(){
         return this.getAttribute('accesskey');
@@ -6881,7 +8168,7 @@ __extend__(HTMLAreaElement.prototype, {
         this.setAttribute('accesskey',value);
     },
     get alt(){
-        return this.getAttribute('alt');
+        return this.getAttribute('alt') || '';
     },
     set alt(value){
         this.setAttribute('alt',value);
@@ -6893,7 +8180,7 @@ __extend__(HTMLAreaElement.prototype, {
         this.setAttribute('coords',value);
     },
     get href(){
-        return this.getAttribute('href');
+        return this.getAttribute('href') || '';
     },
     set href(value){
         this.setAttribute('href',value);
@@ -6906,30 +8193,37 @@ __extend__(HTMLAreaElement.prototype, {
         return 0;
     },
     /*get tabIndex(){
-        return this.getAttribute('tabindex');
-    },
-    set tabIndex(value){
-        this.setAttribute('tabindex',value);
-    },*/
+      return this.getAttribute('tabindex');
+      },
+      set tabIndex(value){
+      this.setAttribute('tabindex',value);
+      },*/
     get target(){
         return this.getAttribute('target');
     },
     set target(value){
         this.setAttribute('target',value);
     },
-    toString: function(){
-        return '[object HTMLAreaElement]';
+
+    /**
+     * toString like <a>, returns the href
+     */
+    toString: function() {
+        return this.href;
     }
 });
 
-			
-/* 
-* HTMLBaseElement - DOM Level 2
-*/
+
+/*
+ * HTMLBaseElement - DOM Level 2
+ *
+ * HTML5: 4.2.3 The base element
+ * http://dev.w3.org/html5/spec/Overview.html#the-base-element
+ */
 HTMLBaseElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLBaseElement.prototype = new HTMLElement;
+HTMLBaseElement.prototype = new HTMLElement();
 __extend__(HTMLBaseElement.prototype, {
     get href(){
         return this.getAttribute('href');
@@ -6942,50 +8236,97 @@ __extend__(HTMLBaseElement.prototype, {
     },
     set target(value){
         this.setAttribute('target',value);
+    },
+    toString: function() {
+        return '[object HTMLBaseElement]';
     }
 });
 
-	
-/* 
-* HTMLQuoteElement - DOM Level 2
-*/
+
+/*
+ * HTMLQuoteElement - DOM Level 2
+ * HTML5: 4.5.5 The blockquote element
+ * http://dev.w3.org/html5/spec/Overview.html#htmlquoteelement
+ */
 HTMLQuoteElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
 __extend__(HTMLQuoteElement.prototype, HTMLElement.prototype);
 __extend__(HTMLQuoteElement.prototype, {
-    get cite(){
-        return this.getAttribute('cite');
+    /**
+     * Quoth the spec:
+     * """
+     * If the cite attribute is present, it must be a valid URL. To
+     * obtain the corresponding citation link, the value of the
+     * attribute must be resolved relative to the element. User agents
+     * should allow users to follow such citation links.
+     * """
+     *
+     * TODO: normalize
+     *
+     */
+    get cite() {
+        return this.getAttribute('cite') || '';
     },
-    set cite(value){
-        this.setAttribute('cite',value);
+
+    set cite(value) {
+        this.setAttribute('cite', value);
+    },
+    toString: function() {
+        return '[object HTMLQuoteElement]';
     }
 });
 
 /*
  * HTMLBodyElement - DOM Level 2
+ * HTML5: http://dev.w3.org/html5/spec/Overview.html#the-body-element-0
  */
 HTMLBodyElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLBodyElement.prototype = new HTMLElement;
+HTMLBodyElement.prototype = new HTMLElement();
 __extend__(HTMLBodyElement.prototype, {
     onload: function(event){
-        __eval__(this.getAttribute('onload')||'', this)
+        __eval__(this.getAttribute('onload')||'', this);
     },
     onunload: function(event){
-        __eval__(this.getAttribute('onunload')||'', this)
+        __eval__(this.getAttribute('onunload')||'', this);
+    },
+    toString: function() {
+        return '[object HTMLBodyElement]';
+    }
+});
+
+/*
+ * HTMLBRElement
+ * HTML5: 4.5.3 The hr Element
+ * http://dev.w3.org/html5/spec/Overview.html#the-br-element
+ */
+HTMLBRElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+
+HTMLBRElement.prototype = new HTMLElement();
+__extend__(HTMLBRElement.prototype, {
+
+    // no additional properties or elements
+
+    toString: function() {
+        return '[object HTMLBRElement]';
     }
 });
 
 
 /*
  * HTMLButtonElement - DOM Level 2
+ *
+ * HTML5: 4.10.6 The button element
+ * http://dev.w3.org/html5/spec/Overview.html#the-button-element
  */
 HTMLButtonElement = function(ownerDocument) {
     HTMLTypeValueInputs.apply(this, arguments);
 };
-HTMLButtonElement.prototype = new HTMLTypeValueInputs;
+HTMLButtonElement.prototype = new HTMLTypeValueInputs();
 __extend__(HTMLButtonElement.prototype, inputElements_status);
 __extend__(HTMLButtonElement.prototype, {
     get dataFormatAs(){
@@ -6993,31 +8334,122 @@ __extend__(HTMLButtonElement.prototype, {
     },
     set dataFormatAs(value){
         this.setAttribute('dataFormatAs',value);
+    },
+    get type() {
+        return this.getAttribute('type') || 'submit';
+    },
+    set type(value) {
+        this.setAttribute('type', value);
+    },
+    get value() {
+        return this.getAttribute('value') || '';
+    },
+    set value(value) {
+        this.setAttribute('value', value);
+    },
+    toString: function() {
+        return '[object HTMLButtonElement]';
     }
 });
 
+// Named Element Support
+HTMLElement.registerSetAttribute('BUTTON', 'name',
+                                 __updateFormForNamedElement__);
 
-/* 
-* HTMLCanvasElement - DOM Level 2
-*/
+/*
+ * HTMLCanvasElement - DOM Level 2
+ * HTML5: 4.8.11 The canvas element
+ * http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
+ */
+
+
+/*
+ * This is a "non-Abstract Base Class". For an implmentation that actually
+ * did something, all these methods would need to over-written
+ */
+CanvasRenderingContext2D = function() {
+    // NOP
+};
+
+var nullfunction = function() {};
+
+CanvasRenderingContext2D.prototype = {
+    addColorStop: nullfunction,
+    arc: nullfunction,
+    beginPath: nullfunction,
+    bezierCurveTo: nullfunction,
+    clearRect: nullfunction,
+    clip: nullfunction,
+    closePath: nullfunction,
+    createLinearGradient: nullfunction,
+    createPattern: nullfunction,
+    createRadialGradient: nullfunction,
+    drawImage: nullfunction,
+    fill: nullfunction,
+    fillRect:  nullfunction,
+    lineTo: nullfunction,
+    moveTo: nullfunction,
+    quadraticCurveTo: nullfunction,
+    rect: nullfunction,
+    restore: nullfunction,
+    rotate: nullfunction,
+    save: nullfunction,
+    scale: nullfunction,
+    setTranform: nullfunction,
+    stroke: nullfunction,
+    strokeRect: nullfunction,
+    transform: nullfunction,
+    translate: nullfunction,
+
+    toString: function() {
+        return '[object CanvasRenderingContext2D]';
+    }
+};
+
 HTMLCanvasElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLCanvasElement.prototype = new HTMLElement;
+HTMLCanvasElement.prototype = new HTMLElement();
 __extend__(HTMLCanvasElement.prototype, {
 
-    // TODO: obviously a big challenge
+    getContext: function(ctxtype) {
+        if (ctxtype === '2d') {
+            return new CanvasRenderingContext2D();
+        }
+        throw new Error("Unknown context type of '" + ctxtype + '"');
+    },
+
+    get height(){
+        return Number(this.getAttribute('height')|| 150);
+    },
+    set height(value){
+        this.setAttribute('height', value);
+    },
+
+    get width(){
+        return Number(this.getAttribute('width')|| 300);
+    },
+    set width(value){
+        this.setAttribute('width', value);
+    },
+
+    toString: function() {
+        return '[object HTMLCanvasElement]';
+    }
 
 });
 
-	
-/* 
+
+/*
 * HTMLTableColElement - DOM Level 2
+*
+* HTML5: 4.9.3 The colgroup element
+* http://dev.w3.org/html5/spec/Overview.html#the-colgroup-element
 */
 HTMLTableColElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLTableColElement.prototype = new HTMLElement;
+HTMLTableColElement.prototype = new HTMLElement();
 __extend__(HTMLTableColElement.prototype, {
     get align(){
         return this.getAttribute('align');
@@ -7054,185 +8486,21 @@ __extend__(HTMLTableColElement.prototype, {
     },
     set width(value){
         this.setAttribute('width', value);
+    },
+    toString: function() {
+        return '[object HTMLTableColElement]';
     }
 });
 
 
 /*
- *	cookie.js 
- *  Private internal helper class used to save/retreive cookies
+ * HTMLModElement - DOM Level 2
+ * http://dev.w3.org/html5/spec/Overview.html#htmlmodelement
  */
-var Cookies = {
-	persistent:{
-		//domain - key on domain name {
-			//path - key on path {
-				//name - key on name {
-					 //value : cookie value
-					 //other cookie properties
-				//}
-			//}
-		//}
-		//expire - provides a timestamp for expiring the cookie
-		//cookie - the cookie!
-	},
-	temporary:{//transient is a reserved word :(
-		//like above
-	}
-};
-
-//HTMLDocument cookie
-Cookies.set = function(doc, cookie){
-	var i,
-        index,
-        name,
-        value,
-        properties = {},
-        attr,
-        attrs = cookie.split(";");
-    
-    var domainValid = function(doc, value){
-        var i,
-            domainParts = doc.domain.splt('.').reverse(),
-            newDomainParts = value.split('.').reverse();
-        if(newDomainParts.length > 1){
-            for(i=0;i<newDomainParts.length;i++){
-                if(!(newDomainParts[i] == domainParts[i])){
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    };
-	//for now the strategy is to simply create a json object
-	//and post it to a file in the .cookies.js file.  I hate parsing
-	//dates so I decided not to implement support for 'expires' 
-	//(which is deprecated) and instead focus on the easier 'max-age'
-	//(which succeeds 'expires') 
-	cookie = {};//keyword properties of the cookie
-	cookie['domain']=doc.domain;
-    if(typeof(doc.location) == 'object'){
-        cookie['path'] = doc.location.pathname;
-    }else{
-        cookie.path = '/';
-    }
-	for(i=0;i<attrs.length;i++){
-		index = attrs[i].indexOf("=");
-        if(index > -1){
-            name = __trim__(attrs[i].slice(0,index));
-            value = __trim__(attrs[i].slice(index+1));
-            if(name=='max-age'){
-               //we'll have to set a timer to check these
-				//and garbage collect expired cookies
-				cookie[name] = parseInt(value, 10);
-			} else if(name=='domain'){
-				if(domainValid(doc, value)){
-					cookie['domain']=value;
-				}
-			} else if(name=='path'){
-				//not sure of any special logic for path
-				cookie['path'] = value;
-			} else {
-				//its not a cookie keyword so store it in our array of properties
-				//and we'll serialize individually in a moment
-				properties[name] = value;
-			}
-		}else{
-			if(attrs[i] == 'secure'){
-                cookie[attrs[i]] = true;
-			}
-		}
-	}
-	if(!cookie['max-age']){
-		//it's a transient cookie so it only lasts as long as 
-		//the window.location remains the same
-		__mergeCookie__(Cookies.temporary, cookie, properties);
-	}else if(cookie['max-age']===0){
-		//delete the cookies
-		//TODO
-	}else{
-		//the cookie is persistent
-		__mergeCookie__(Cookies.persistent, cookie, properties);
-		__persistCookies__();
-	}
-};
-
-Cookies.get = function(doc){
-	//The cookies that are returned must belong to the same domain
-	//and be at or below the current window.location.path.  Also
-	//we must check to see if the cookie was set to 'secure' in which
-	//case we must check our current location.protocol to make sure it's
-	//https:
-	return  __cookieString__(Cookies.temporary, doc) + 
-            __cookieString__(Cookies.persistent, doc); 	
-};
-
-function __cookieString__(cookies, doc) {
-    var cookieString = ""
-        domain, 
-        path,
-        name;
-    for (domain in cookies) {
-        // check if the cookie is in the current domain (if domain is set)
-        if (domain == "" || domain == doc.domain) {
-            for (path in cookies[domain]) {
-                // make sure path is at or below the window location path
-                if (path == "/" || doc.documentURI.indexOf(path) > 0) {
-                    for (name in cookies[domain][path]) {
-                        cookieString += 
-                            name+"="+cookies[domain][path][name].value+";";
-                    }
-                }
-            }
-        }
-    }
-    return cookieString;
-};
-
-function __mergeCookie__(target, cookie, properties){
-	var name, now;
-	if(!target[cookie.domain]){
-		target[cookie.domain] = {};
-	}
-	if(!target[cookie.domain][cookie.path]){
-		target[cookie.domain][cookie.path] = {};
-	}
-	for(name in properties){
-		now = new Date().getTime();
-		target[cookie.domain][cookie.path][name] = {
-			value:properties[name],
-			"@env:secure":cookie.secure,
-			"@env:max-age":cookie['max-age'],
-			"@env:date-created":now,
-			"@env:expiration":now + cookie['max-age']
-		};
-	}
-};
-
-function __persistCookies__(){
-	//TODO
-	//I think it should be done via $env so it can be customized
-};
-
-function __loadCookies__(){
-	//TODO
-	//should also be configurable via $env	
-    try{
-        //TODO - load cookies
-        
-    }catch(e){
-        //TODO - fail gracefully
-    }   
-};
-
-	
-/* 
-* HTMLModElement - DOM Level 2
-*/
 HTMLModElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLModElement.prototype = new HTMLElement;
+HTMLModElement.prototype = new HTMLElement();
 __extend__(HTMLModElement.prototype, {
     get cite(){
         return this.getAttribute('cite');
@@ -7245,33 +8513,65 @@ __extend__(HTMLModElement.prototype, {
     },
     set dateTime(value){
         this.setAttribute('datetime', value);
+    },
+    toString: function() {
+        return '[object HTMLModElement]';
     }
 });
 
 /*
-* HTMLDivElement - DOM Level 2
-*/
+ * HTMLDivElement - DOM Level 2
+ * HTML5: 4.5.12 The Div Element
+ * http://dev.w3.org/html5/spec/Overview.html#the-div-element
+ */
 HTMLDivElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLDivElement.prototype = new HTMLElement;
+
+HTMLDivElement.prototype = new HTMLElement();
 __extend__(HTMLDivElement.prototype, {
     get align(){
         return this.getAttribute('align') || 'left';
     },
     set align(value){
         this.setAttribute('align', value);
+    },
+    toString: function() {
+        return '[object HTMLDivElement]';
+    }
+});
+
+
+/*
+ * HTMLDListElement
+ * HTML5: 4.5.7 The dl Element
+ * http://dev.w3.org/html5/spec/Overview.html#the-dl-element
+ */
+HTMLDListElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+
+HTMLDListElement.prototype = new HTMLElement();
+__extend__(HTMLDListElement.prototype, {
+
+    // no additional properties or elements
+
+    toString: function() {
+        return '[object HTMLDListElement]';
     }
 });
 
 
 /**
  * HTMLLegendElement - DOM Level 2
+ *
+ * HTML5: 4.10.3 The legend element
+ * http://dev.w3.org/html5/spec/Overview.html#the-legend-element
  */
 HTMLLegendElement = function(ownerDocument) {
     HTMLInputCommon.apply(this, arguments);
 };
-HTMLLegendElement.prototype = new HTMLInputCommon;
+HTMLLegendElement.prototype = new HTMLInputCommon();
 __extend__(HTMLLegendElement.prototype, {
     get align(){
         return this.getAttribute('align');
@@ -7284,107 +8584,155 @@ __extend__(HTMLLegendElement.prototype, {
 
 /*
  * HTMLFieldSetElement - DOM Level 2
+ *
+ * HTML5: 4.10.2 The fieldset element
+ * http://dev.w3.org/html5/spec/Overview.html#the-fieldset-element
  */
 HTMLFieldSetElement = function(ownerDocument) {
     HTMLLegendElement.apply(this, arguments);
 };
-HTMLFieldSetElement.prototype = new HTMLLegendElement;
+HTMLFieldSetElement.prototype = new HTMLLegendElement();
 __extend__(HTMLFieldSetElement.prototype, {
     get margin(){
         return this.getAttribute('margin');
     },
     set margin(value){
         this.setAttribute('margin',value);
+    },
+    toString: function() {
+        return '[object HTMLFieldSetElement]';
     }
 });
 
-/* 
+// Named Element Support
+HTMLElement.registerSetAttribute('FIELDSET', 'name',
+                                 __updateFormForNamedElement__);
+/*
  * HTMLFormElement - DOM Level 2
+ *
+ * HTML5: http://dev.w3.org/html5/spec/Overview.html#the-form-element
  */
 HTMLFormElement = function(ownerDocument){
     HTMLElement.apply(this, arguments);
+
     //TODO: on __elementPopped__ from the parser
-    //      we need to determine all the forms default 
+    //      we need to determine all the forms default
     //      values
 };
-HTMLFormElement.prototype = new HTMLElement;
+HTMLFormElement.prototype = new HTMLElement();
 __extend__(HTMLFormElement.prototype,{
-    get acceptCharset(){ 
+    get acceptCharset(){
         return this.getAttribute('accept-charset');
     },
-    set acceptCharset(acceptCharset){
+    set acceptCharset(acceptCharset) {
         this.setAttribute('accept-charset', acceptCharset);
-        
     },
-    get action(){
+    get action() {
         return this.getAttribute('action');
-        
     },
     set action(action){
         this.setAttribute('action', action);
-        
     },
-    get elements() {
-        return this.getElementsByTagName("*");
-        
-    },
-    get enctype(){
+
+    get enctype() {
         return this.getAttribute('enctype');
-        
     },
-    set enctype(enctype){
+    set enctype(enctype) {
         this.setAttribute('enctype', enctype);
-        
+    },
+    get method() {
+        return this.getAttribute('method');
+    },
+    set method(method) {
+        this.setAttribute('method', method);
+    },
+    get name() {
+        return this.getAttribute("name");
+    },
+    set name(val) {
+        return this.setAttribute("name",val);
+    },
+    get target() {
+        return this.getAttribute("target");
+    },
+    set target(val) {
+        return this.setAttribute("target",val);
+    },
+
+    /**
+     * "Named Elements"
+     *
+     */
+    /**
+     * returns HTMLFormControlsCollection
+     * http://dev.w3.org/html5/spec/Overview.html#dom-form-elements
+     *
+     * button fieldset input keygen object output select textarea
+     */
+    get elements() {
+        var nodes = this.getElementsByTagName('*');
+        var alist = [];
+        var i, tmp;
+        for (i = 0; i < nodes.length; ++i) {
+            nodename = nodes[i].nodeName;
+            // would like to replace switch with something else
+            //  since it's redundant with the SetAttribute callbacks
+            switch (nodes[i].nodeName) {
+            case 'BUTTON':
+            case 'FIELDSET':
+            case 'INPUT':
+            case 'KEYGEN':
+            case 'OBJECT':
+            case 'OUTPUT':
+            case 'SELECT':
+            case 'TEXTAREA':
+                alist.push(nodes[i]);
+                this[i] = nodes[i];
+                tmp = nodes[i].name;
+                if (tmp) {
+                    this[tmp] = nodes[i];
+                }
+                tmp = nodes[i].id;
+                if (tmp) {
+                    this[tmp] = nodes[i];
+                }
+            }
+        }
+        return new HTMLCollection(alist);
+    },
+    _updateElements: function() {
+        this.elements;
     },
     get length() {
         return this.elements.length;
-        
     },
-    get method(){
-        return this.getAttribute('method');
-        
+    item: function(idx) {
+        return this.elements[idx];
     },
-    set method(method){
-        this.setAttribute('method', method);
-        
+    namedItem: function(aname) {
+        return this.elements.namedItem(aname);
     },
-	get name() {
-	    return this.getAttribute("name"); 
-	    
-    },
-	set name(val) { 
-	    return this.setAttribute("name",val); 
-	    
-    },
-	get target() { 
-	    return this.getAttribute("target"); 
-	    
-    },
-	set target(val) { 
-	    return this.setAttribute("target",val); 
-	    
-    },
-    toString: function(){
+    toString: function() {
         return '[object HTMLFormElement]';
     },
-	submit:function(){
+    submit: function() {
         //TODO: this needs to perform the form inputs serialization
         //      and submission
         //  DONE: see xhr/form.js
-	    var event = __submit__(this);
-	    
+        var event = __submit__(this);
+
     },
-	reset:function(){
+    reset: function() {
         //TODO: this needs to reset all values specified in the form
         //      to those which where set as defaults
-	    __reset__(this);
-	    
+        __reset__(this);
+
     },
-    onsubmit:HTMLEvents.prototype.onsubmit,
+    onsubmit: HTMLEvents.prototype.onsubmit,
     onreset: HTMLEvents.prototype.onreset
 });
 
-/** 
+/**
  * HTMLFrameElement - DOM Level 2
  */
 HTMLFrameElement = function(ownerDocument) {
@@ -7394,9 +8742,9 @@ HTMLFrameElement = function(ownerDocument) {
     this.contentDocument = null;
     this.contentWindow = null;
 };
-HTMLFrameElement.prototype = new HTMLElement;
+HTMLFrameElement.prototype = new HTMLElement();
 __extend__(HTMLFrameElement.prototype, {
-    
+
     get frameBorder(){
         return this.getAttribute('border')||"";
     },
@@ -7451,13 +8799,16 @@ __extend__(HTMLFrameElement.prototype, {
     onload: HTMLEvents.prototype.onload
 });
 
-/** 
+/**
  * HTMLFrameSetElement - DOM Level 2
+ *
+ * HTML5: 12.3.3 Frames
+ * http://dev.w3.org/html5/spec/Overview.html#frameset
  */
 HTMLFrameSetElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLFrameSetElement.prototype = new HTMLElement;
+HTMLFrameSetElement.prototype = new HTMLElement();
 __extend__(HTMLFrameSetElement.prototype, {
     get cols(){
         return this.getAttribute('cols');
@@ -7470,16 +8821,38 @@ __extend__(HTMLFrameSetElement.prototype, {
     },
     set rows(value){
         this.setAttribute('rows', value);
+    },
+    toString: function() {
+        return '[object HTMLFrameSetElement]';
     }
 });
 
-/** 
+/*
+ * HTMLHeadingElement
+ * HTML5: 4.4.6 The h1, h2, h3, h4, h5, and h6 elements
+ * http://dev.w3.org/html5/spec/Overview.html#the-h1-h2-h3-h4-h5-and-h6-elements
+ */
+HTMLHeadingElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+
+HTMLHeadingElement.prototype = new HTMLElement();
+__extend__(HTMLHeadingElement.prototype, {
+    toString: function() {
+        return '[object HTMLHeadingElement]';
+    }
+});
+
+/**
  * HTMLHeadElement - DOM Level 2
+ *
+ * HTML5: 4.2.1 The head element
+ * http://dev.w3.org/html5/spec/Overview.html#the-head-element-0
  */
 HTMLHeadElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLHeadElement.prototype = new HTMLElement;
+HTMLHeadElement.prototype = new HTMLElement();
 __extend__(HTMLHeadElement.prototype, {
     get profile(){
         return this.getAttribute('profile');
@@ -7490,55 +8863,100 @@ __extend__(HTMLHeadElement.prototype, {
     //we override this so we can apply browser behavior specific to head children
     //like loading scripts
     appendChild : function(newChild) {
-        var newChild = HTMLElement.prototype.appendChild.apply(this,[newChild]);
+        newChild = HTMLElement.prototype.appendChild.apply(this,[newChild]);
         //TODO: evaluate scripts which are appended to the head
         //__evalScript__(newChild);
         return newChild;
     },
     insertBefore : function(newChild, refChild) {
-        var newChild = HTMLElement.prototype.insertBefore.apply(this,[newChild]);
+        newChild = HTMLElement.prototype.insertBefore.apply(this,[newChild]);
         //TODO: evaluate scripts which are appended to the head
         //__evalScript__(newChild);
         return newChild;
     },
     toString: function(){
         return '[object HTMLHeadElement]';
-    },
+    }
 });
 
 
-/* 
+/*
+ * HTMLHRElement
+ * HTML5: 4.5.2 The hr Element
+ * http://dev.w3.org/html5/spec/Overview.html#the-hr-element
+ */
+HTMLHRElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+
+HTMLHRElement.prototype = new HTMLElement();
+__extend__(HTMLHRElement.prototype, {
+
+    // no additional properties or elements
+
+    toString: function() {
+        return '[object HTMLHRElement]';
+    }
+});
+
+
+/*
+ * HTMLHtmlElement
+ * HTML5: 4.1.1 The Html Element
+ * http://dev.w3.org/html5/spec/Overview.html#htmlhtmlelement
+ */
+HTMLHtmlElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+
+HTMLHtmlElement.prototype = new HTMLElement();
+__extend__(HTMLHtmlElement.prototype, {
+
+    // no additional properties or elements
+
+    toString: function() {
+        return '[object HTMLHtmlElement]';
+    }
+});
+
+
+/*
  * HTMLIFrameElement - DOM Level 2
+ *
+ * HTML5: 4.8.3 The iframe element
+ * http://dev.w3.org/html5/spec/Overview.html#the-iframe-element
  */
 HTMLIFrameElement = function(ownerDocument) {
     HTMLFrameElement.apply(this, arguments);
 };
-HTMLIFrameElement.prototype = new HTMLFrameElement;
+HTMLIFrameElement.prototype = new HTMLFrameElement();
 __extend__(HTMLIFrameElement.prototype, {
-	get height() { 
-	    return this.getAttribute("height") || ""; 
+    get height() {
+        return this.getAttribute("height") || "";
     },
-	set height(val) { 
-	    return this.setAttribute("height",val); 
+    set height(val) {
+        return this.setAttribute("height",val);
     },
-	get width() { 
-	    return this.getAttribute("width") || ""; 
+    get width() {
+        return this.getAttribute("width") || "";
     },
-	set width(val) { 
-	    return this.setAttribute("width",val); 
+    set width(val) {
+        return this.setAttribute("width",val);
     },
     toString: function(){
         return '[object HTMLIFrameElement]';
     }
 });
-	
-/** 
- * HTMLImageElement - DOM Level 2
+
+/**
+ * HTMLImageElement and Image
  */
+
+
 HTMLImageElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLImageElement.prototype = new HTMLElement;
+HTMLImageElement.prototype = new HTMLElement();
 __extend__(HTMLImageElement.prototype, {
     get alt(){
         return this.getAttribute('alt');
@@ -7547,7 +8965,7 @@ __extend__(HTMLImageElement.prototype, {
         this.setAttribute('alt', value);
     },
     get height(){
-        return this.getAttribute('height');
+        return parseInt(this.getAttribute('height'), 10) || 0;
     },
     set height(value){
         this.setAttribute('height', value);
@@ -7571,113 +8989,332 @@ __extend__(HTMLImageElement.prototype, {
         this.setAttribute('name', value);
     },
     get src(){
-        return this.getAttribute('src');
+        return this.getAttribute('src') || '';
     },
     set src(value){
         this.setAttribute('src', value);
-
-        var event = document.createEvent();
-        event.initEvent("load");
-        this.dispatchEvent( event, false );
     },
     get width(){
-        return this.getAttribute('width');
+        return parseInt(this.getAttribute('width'), 10) || 0;
     },
     set width(value){
         this.setAttribute('width', value);
     },
+    toString: function(){
+        return '[object HTMLImageElement]';
+    }
+});
+
+/*
+ * html5 4.8.1
+ * http://dev.w3.org/html5/spec/Overview.html#the-img-element
+ */
+Image = function(width, height) {
+    // Not sure if "[global].document" satifies this requirement:
+    // "The element's document must be the active document of the
+    // browsing context of the Window object on which the interface
+    // object of the invoked constructor is found."
+
+    HTMLElement.apply(this, [document]);
+    // Note: firefox will throw an error if the width/height
+    //   is not an integer.  Safari just converts to 0 on error.
+    this.width = parseInt(width, 10) || 0;
+    this.height = parseInt(height, 10) || 0;
+    this.nodeName = 'IMG';
+};
+Image.prototype = new HTMLImageElement();
+
+
+/*
+ * Image.src attribute events.
+ *
+ * Not sure where this should live... in events/img.js? in parser/img.js?
+ * Split out to make it easy to move.
+ */
+
+/**
+ * HTMLImageElement && Image are a bit odd in that the 'src' attribute
+ * is 'active' -- changing it triggers loading of the image from the
+ * network.
+ *
+ * This can occur by
+ *   - Directly setting the Image.src =
+ *   - Using one of the Element.setAttributeXXX methods
+ *   - Node.importNode an image
+ *   - The initial creation and parsing of an <img> tag
+ *
+ * __onImageRequest__ is a function that handles eventing
+ *  and dispatches to a user-callback.
+ *
+ */
+__loadImage__ = function(node, value) {
+    var event;
+    if (value && (!Envjs.loadImage ||
+                  (Envjs.loadImage &&
+                   Envjs.loadImage(node, value)))) {
+        // value has to be something (easy)
+        // if the user-land API doesn't exist
+        // Or if the API exists and it returns true, then ok:
+        event = document.createEvent('Events');
+        event.initEvent('load');
+    } else {
+        // oops
+        event = document.createEvent('Events');
+        event.initEvent('error');
+    }
+    node.dispatchEvent(event, false);
+};
+
+__extend__(HTMLImageElement.prototype, {
     onload: function(event){
-        __eval__(this.getAttribute('onload')||'', this)
+        __eval__(this.getAttribute('onload') || '', this);
+    }
+});
+
+
+/*
+ * Image Loading
+ *
+ * The difference between "owner.parsing" and "owner.fragment"
+ *
+ * If owner.parsing === true, then during the html5 parsing then,
+ *  __elementPopped__ is called when a compete tag (with attrs and
+ *  children) is full parsed and added the DOM.
+ *
+ *   For images, __elementPopped__ is called with everything the
+ *    tag has.  which in turn looks for a "src" attr and calls
+ *    __loadImage__
+ *
+ * If owner.parser === false (or non-existant), then we are not in
+ * a parsing step.  For images, perhaps someone directly modified
+ * a 'src' attribute of an existing image.
+ *
+ * 'innerHTML' is tricky since we first create a "fake document",
+ *  parse it, then import the right parts.  This may call
+ *  img.setAttributeNS twice.  once during the parse and once
+ *  during the clone of the node.  We want event to trigger on the
+ *  later and not during th fake doco.  "owner.fragment" is set by
+ *  the fake doco parser to indicate that events should not be
+ *  triggered on this.
+ *
+ * We coud make 'owner.parser' == [ 'none', 'full', 'fragment']
+ * and just use one variable That was not done since the patch is
+ * quite large as is.
+ *
+ * This same problem occurs with scripts.  innerHTML oddly does
+ * not eval any <script> tags inside.
+ */
+HTMLElement.registerSetAttribute('IMG', 'src', function(node, value) {
+    var owner = node.ownerDocument;
+    if (!owner.parsing && !owner.fragment) {
+        __loadImage__(node, value);
     }
 });
 /**
- * HTMLInputElement - DOM Level 2
+ * HTMLInputElement
+ *
+ * HTML5: 4.10.5 The input element
+ * http://dev.w3.org/html5/spec/Overview.html#the-input-element
  */
 HTMLInputElement = function(ownerDocument) {
     HTMLInputAreaCommon.apply(this, arguments);
+    this._dirty = false;
+    this._checked = null;
+    this._value = null;
 };
-HTMLInputElement.prototype = new HTMLInputAreaCommon;
+HTMLInputElement.prototype = new HTMLInputAreaCommon();
 __extend__(HTMLInputElement.prototype, {
     get alt(){
-        return this.getAttribute('alt');
+        return this.getAttribute('alt') || '';
     },
     set alt(value){
         this.setAttribute('alt', value);
     },
+
+    /**
+     * 'checked' returns state, NOT the value of the attribute
+     */
     get checked(){
-        return (this.getAttribute('checked')=='checked');
+        if (this._checked === null) {
+            this._checked = this.defaultChecked;
+        }
+        return this._checked;
     },
     set checked(value){
-        this.setAttribute('checked', (value ? 'checked' :''));
+        // force to boolean value
+        this._checked = (value) ? true : false;
     },
+
+    /**
+     * 'defaultChecked' actually reflects if the 'checked' attribute
+     * is present or not
+     */
     get defaultChecked(){
-        return this.getAttribute('defaultChecked');
+        return this.hasAttribute('checked');
     },
+    set defaultChecked(val){
+        if (val) {
+            this.setAttribute('checked', '');
+        } else {
+            if (this.defaultChecked) {
+                this.removeAttribute('checked');
+            }
+        }
+    },
+    get defaultValue() {
+        return this.getAttribute('value') || '';
+    },
+    set defaultValue(value) {
+        this._dirty = true;
+        this.setAttribute('value', value);
+    },
+    get value() {
+        return (this._value === null) ? this.defaultValue : this._value;
+    },
+    set value(newvalue) {
+        this._value = newvalue;
+    },
+    /**
+     * Height is a string
+     */
     get height(){
-        return this.getAttribute('height');
+        // spec says it is a string
+        return this.getAttribute('height') || '';
     },
     set height(value){
         this.setAttribute('height',value);
     },
+
+    /**
+     * MaxLength is a number
+     */
     get maxLength(){
-        return Number(this.getAttribute('maxlength')||'0');
+        return Number(this.getAttribute('maxlength')||'-1');
     },
     set maxLength(value){
         this.setAttribute('maxlength', value);
     },
+
+    /**
+     * Src is a URL string
+     */
     get src(){
-        return this.getAttribute('src');
+        return this.getAttribute('src') || '';
     },
     set src(value){
+        // TODO: make absolute any relative URLS
         this.setAttribute('src', value);
     },
-    get useMap(){
-        return this.getAttribute('map');
+
+    get type() {
+        return this.getAttribute('type') || 'text';
     },
+    set type(value) {
+        this.setAttribute('type', value);
+    },
+
+    get useMap(){
+        return this.getAttribute('map') || '';
+    },
+
+    /**
+     * Width: spec says it is a string
+     */
     get width(){
-        return this.getAttribute('width');
+        return this.getAttribute('width') || '';
     },
     set width(value){
         this.setAttribute('width',value);
     },
     click:function(){
         __click__(this);
+    },
+    toString: function() {
+        return '[object HTMLInputElement]';
     }
 });
 
+//http://dev.w3.org/html5/spec/Overview.html#dom-input-value
+// if someone directly modifies the value attribute, then the input's value
+// also directly changes.
+HTMLElement.registerSetAttribute('INPUT', 'value', function(node, value) {
+    if (!node._dirty) {
+        node._value = value;
+        node._dirty = true;
+    }
+});
 
+/*
+ *The checked content attribute is a boolean attribute that gives the
+ *default checkedness of the input element. When the checked content
+ *attribute is added, if the control does not have dirty checkedness,
+ *the user agent must set the checkedness of the element to true; when
+ *the checked content attribute is removed, if the control does not
+ *have dirty checkedness, the user agent must set the checkedness of
+ *the element to false.
+ */
+// Named Element Support
+HTMLElement.registerSetAttribute('INPUT', 'name',
+                                 __updateFormForNamedElement__);
 
-/** 
+/**
  * HTMLLabelElement - DOM Level 2
+ * HTML5 4.10.4 The label element
+ * http://dev.w3.org/html5/spec/Overview.html#the-label-element
  */
 HTMLLabelElement = function(ownerDocument) {
     HTMLInputCommon.apply(this, arguments);
 };
-HTMLLabelElement.prototype = new HTMLInputCommon;
+HTMLLabelElement.prototype = new HTMLInputCommon();
 __extend__(HTMLLabelElement.prototype, inputElements_dataProperties);
 __extend__(HTMLLabelElement.prototype, {
-    get htmlFor(){
+    get htmlFor() {
         return this.getAttribute('for');
     },
-    set htmlFor(value){
+    set htmlFor(value) {
         this.setAttribute('for',value);
     },
-    get dataFormatAs(){
+    get dataFormatAs() {
         return this.getAttribute('dataFormatAs');
     },
-    set dataFormatAs(value){
+    set dataFormatAs(value) {
         this.setAttribute('dataFormatAs',value);
+    },
+    toString: function() {
+        return '[object HTMLLabelElement]';
+    }
+});
+
+/*
+ * HTMLLIElement
+ * HTML5: 4.5.8 The li Element
+ * http://dev.w3.org/html5/spec/Overview.html#the-li-element
+ */
+HTMLLIElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+
+HTMLLIElement.prototype = new HTMLElement();
+__extend__(HTMLLIElement.prototype, {
+
+    // TODO: attribute long value;
+
+    toString: function() {
+        return '[object HTMLLIElement]';
     }
 });
 
 
-/* 
-* HTMLLinkElement - DOM Level 2
-*/
+/*
+ * HTMLLinkElement - DOM Level 2
+ *
+ * HTML5: 4.8.12 The map element
+ * http://dev.w3.org/html5/spec/Overview.html#the-map-element
+ */
 HTMLLinkElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLLinkElement.prototype = new HTMLElement;
+HTMLLinkElement.prototype = new HTMLElement();
 __extend__(HTMLLinkElement.prototype, {
     get disabled(){
         return this.getAttribute('disabled');
@@ -7733,53 +9370,111 @@ __extend__(HTMLLinkElement.prototype, {
     set type(value){
         this.setAttribute('type',value);
     },
-    onload: function(event){
-        __eval__(this.getAttribute('onload')||'', this)
+    toString: function() {
+        return '[object HTMLLinkElement]';
     }
 });
 
+__loadLink__ = function(node, value) {
+    var event;
+    var owner = node.ownerDocument;
 
-/** 
- * HTMLMapElement - DOM Level 2
+    if (owner.fragment) {
+        /**
+         * if we are in an innerHTML fragment parsing step
+         * then ignore.  It will be handled once the fragment is
+         * added to the real doco
+         */
+        return;
+    }
+
+    if (node.parentNode === null) {
+        /*
+         * if a <link> is parentless (normally by create a new link
+         * via document.createElement('link'), then do *not* fire an
+         * event, even if it has a valid 'href' attribute.
+         */
+        return;
+    }
+    if (value != '' && (!Envjs.loadLink ||
+                        (Envjs.loadLink &&
+                         Envjs.loadLink(node, value)))) {
+        // value has to be something (easy)
+        // if the user-land API doesn't exist
+        // Or if the API exists and it returns true, then ok:
+        event = document.createEvent('Events');
+        event.initEvent('load');
+    } else {
+        // oops
+        event = document.createEvent('Events');
+        event.initEvent('error');
+    }
+    node.dispatchEvent(event, false);
+};
+
+
+HTMLElement.registerSetAttribute('LINK', 'href', function(node, value) {
+    __loadLink__(node, value);
+});
+
+/**
+ * Event stuff, not sure where it goes
+ */
+__extend__(HTMLLinkElement.prototype, {
+    onload: function(event){
+        __eval__(this.getAttribute('onload')||'', this);
+    },
+});
+
+/**
+ * HTMLMapElement
+ *
+ * 4.8.12 The map element
+ * http://dev.w3.org/html5/spec/Overview.html#the-map-element
  */
 HTMLMapElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLMapElement.prototype = new HTMLElement;
+HTMLMapElement.prototype = new HTMLElement();
 __extend__(HTMLMapElement.prototype, {
     get areas(){
         return this.getElementsByTagName('area');
     },
     get name(){
-        return this.getAttribute('name');
+        return this.getAttribute('name') || '';
     },
     set name(value){
         this.setAttribute('name',value);
+    },
+    toString: function() {
+        return '[object HTMLMapElement]';
     }
 });
 
-/** 
+/**
  * HTMLMetaElement - DOM Level 2
+ * HTML5: 4.2.5 The meta element
+ * http://dev.w3.org/html5/spec/Overview.html#meta
  */
 HTMLMetaElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLMetaElement.prototype = new HTMLElement;
+HTMLMetaElement.prototype = new HTMLElement();
 __extend__(HTMLMetaElement.prototype, {
-    get content(){
-        return this.getAttribute('content');
+    get content() {
+        return this.getAttribute('content') || '';
     },
     set content(value){
         this.setAttribute('content',value);
     },
     get httpEquiv(){
-        return this.getAttribute('http-equiv');
+        return this.getAttribute('http-equiv') || '';
     },
     set httpEquiv(value){
         this.setAttribute('http-equiv',value);
     },
     get name(){
-        return this.getAttribute('name');
+        return this.getAttribute('name') || '';
     },
     set name(value){
         this.setAttribute('name',value);
@@ -7789,17 +9484,22 @@ __extend__(HTMLMetaElement.prototype, {
     },
     set scheme(value){
         this.setAttribute('scheme',value);
+    },
+    toString: function() {
+        return '[object HTMLMetaElement]';
     }
 });
 
 
 /**
  * HTMLObjectElement - DOM Level 2
+ * HTML5: 4.8.5 The object element
+ * http://dev.w3.org/html5/spec/Overview.html#the-object-element
  */
 HTMLObjectElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLObjectElement.prototype = new HTMLElement;
+HTMLObjectElement.prototype = new HTMLElement();
 __extend__(HTMLObjectElement.prototype, {
     get code(){
         return this.getAttribute('code');
@@ -7850,11 +9550,11 @@ __extend__(HTMLObjectElement.prototype, {
         this.setAttribute('standby',value);
     },
     /*get tabIndex(){
-        return this.getAttribute('tabindex');
-    },
-    set tabIndex(value){
-        this.setAttribute('tabindex',value);
-    },*/
+      return this.getAttribute('tabindex');
+      },
+      set tabIndex(value){
+      this.setAttribute('tabindex',value);
+      },*/
     get type(){
         return this.getAttribute('type');
     },
@@ -7875,17 +9575,46 @@ __extend__(HTMLObjectElement.prototype, {
     },
     get contentDocument(){
         return this.ownerDocument;
+    },
+    toString: function() {
+        return '[object HTMLObjectElement]';
     }
 });
 
-			
+// Named Element Support
+HTMLElement.registerSetAttribute('OBJECT', 'name',
+                                 __updateFormForNamedElement__);
+
+/*
+ * HTMLOListElement
+ * HTML5: 4.5.6 The ol Element
+ * http://dev.w3.org/html5/spec/Overview.html#the-ol-element
+ */
+HTMLOListElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+
+HTMLOListElement.prototype = new HTMLElement();
+__extend__(HTMLOListElement.prototype, {
+
+    // TODO: attribute boolean reversed;
+    // TODO:  attribute long start;
+
+    toString: function() {
+        return '[object HTMLOListElement]';
+    }
+});
+
+
 /**
  * HTMLOptGroupElement - DOM Level 2
+ * HTML 5: 4.10.9 The optgroup element
+ * http://dev.w3.org/html5/spec/Overview.html#the-optgroup-element
  */
 HTMLOptGroupElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLOptGroupElement.prototype = new HTMLElement;
+HTMLOptGroupElement.prototype = new HTMLElement();
 __extend__(HTMLOptGroupElement.prototype, {
     get disabled(){
         return this.getAttribute('disabled');
@@ -7900,15 +9629,15 @@ __extend__(HTMLOptGroupElement.prototype, {
         this.setAttribute('label',value);
     },
     appendChild: function(node){
-        var i, 
-            length,
-            selected = false;
+        var i,
+        length,
+        selected = false;
         //make sure at least one is selected by default
-        if(node.nodeType == Node.ELEMENT_NODE && node.tagName == 'OPTION'){
+        if(node.nodeType === Node.ELEMENT_NODE && node.tagName === 'OPTION'){
             length = this.childNodes.length;
             for(i=0;i<length;i++){
-                if(this.childNodes[i].nodeType == Node.ELEMENT_NODE && 
-                    this.childNodes[i].tagName == 'OPTION'){
+                if(this.childNodes[i].nodeType === Node.ELEMENT_NODE &&
+                   this.childNodes[i].tagName === 'OPTION'){
                     //check if it is selected
                     if(this.selected){
                         selected = true;
@@ -7922,76 +9651,182 @@ __extend__(HTMLOptGroupElement.prototype, {
             }
         }
         return HTMLElement.prototype.appendChild.apply(this, [node]);
+    },
+    toString: function() {
+        return '[object HTMLOptGroupElement]';
     }
 });
-	
+
 /**
- * HTMLOptionElement - DOM Level 2
+ * HTMLOptionElement, Option
+ * HTML5: 4.10.10 The option element
+ * http://dev.w3.org/html5/spec/Overview.html#the-option-element
  */
 HTMLOptionElement = function(ownerDocument) {
     HTMLInputCommon.apply(this, arguments);
+    this._selected = null;
 };
-HTMLOptionElement.prototype = new HTMLInputCommon;
+HTMLOptionElement.prototype = new HTMLInputCommon();
 __extend__(HTMLOptionElement.prototype, {
-    get defaultSelected(){
-        return this.getAttribute('defaultSelected');
+
+    /**
+     * defaultSelected actually reflects the presence of the
+     * 'selected' attribute.
+     */
+    get defaultSelected() {
+        return this.hasAttribute('selected');
     },
-    set defaultSelected(value){
-        this.setAttribute('defaultSelected',value);
-    },
-    get index(){
-        var options = this.parentNode.childNodes,
-            i, index = 0;
-        for(i=0; i<options.length;i++){
-            if(options.nodeType === Node.ELEMENT_NODE && node.tagName === "OPTION"){
-                index++;
+    set defaultSelected(value) {
+        if (value) {
+            this.setAttribute('selected','');
+        } else {
+            if (this.hasAttribute('selected')) {
+                this.removeAttribute('selected');
             }
-            if(this == options[i])
-                return index;
         }
-        return -1;
     },
-    get label(){
+
+    /*
+     * HTML5: The form IDL attribute's behavior depends on whether the
+     * option element is in a select element or not. If the option has
+     * a select element as its parent, or has a colgroup element as
+     * its parent and that colgroup element has a select element as
+     * its parent, then the form IDL attribute must return the same
+     * value as the form IDL attribute on that select
+     * element. Otherwise, it must return null.
+     */
+    _selectparent: function() {
+        var parent = this.parentNode;
+        if (!parent) {
+            return null;
+        }
+
+        if (parent.tagName === 'SELECT') {
+            return parent;
+        }
+        if (parent.tagName === 'COLGROUP') {
+            parent = parent.parentNode;
+            if (parent && parent.tagName === 'SELECT') {
+                return parent;
+            }
+        }
+    },
+    _updateoptions: function() {
+        var parent = this._selectparent();
+        if (parent) {
+            // has side effects and updates owner select's options
+            parent.options;
+        }
+    },
+    get form() {
+        var parent = this._selectparent();
+        return parent ? parent.form : null;
+    },
+    get index() {
+        var options, i;
+
+        if (! this.parentNode) {
+            return -1;
+        }
+        options = this.parentNode.options;
+        for (i=0; i < options.length; ++i) {
+            if (this === options[i]) {
+                return i;
+            }
+        }
+        return 0;
+    },
+    get label() {
         return this.getAttribute('label');
     },
-    set label(value){
-        this.setAttribute('label',value);
+    set label(value) {
+        this.setAttribute('label', value);
     },
-    get selected(){
-        return (this.getAttribute('selected')=='selected');
-    },
-    set selected(value){
-        //console.log('option set selected %s', value);
-        if(this.defaultSelected===null && this.selected!==null){
-            this.defaultSelected = this.selected+'';
-        }
-        var selectedValue = (value ? 'selected' : '');
-        if (this.getAttribute('selected') == selectedValue) {
-            // prevent inifinite loops (option's selected modifies 
-            // select's value which modifies option's selected)
-            return;
-        }
-        //console.log('option setAttribute selected %s', selectedValue);
-        this.setAttribute('selected', selectedValue);
 
+    /*
+     * This is not in the spec, but safari and firefox both
+     * use this
+     */
+    get name() {
+        return this.getAttribute('name');
     },
-    get text(){
-         return ((this.nodeValue === null) ||  (this.nodeValue ===undefined)) ?
-             this.innerHTML :
-             this.nodeValue;
+    set name(value) {
+        this.setAttribute('name', value);
     },
-    get value(){
-       //console.log('getting value on option %s %s', this.text, this.getAttribute('value'));
-        return ((this.getAttribute('value') === undefined) || (this.getAttribute('value') === null)) ?
-            this.text :
-            this.getAttribute('value');
+
+    /**
+     *
+     */
+    get selected() {
+        // if disabled, return false, no matter what
+        if (this.disabled) {
+            return false;
+        }
+        if (this._selected === null) {
+            return this.defaultSelected;
+        }
+
+        return this._selected;
     },
-    set value(value){
-       //console.log('setting value on option');
-        this.setAttribute('value',value);
+    set selected(value) {
+        this._selected = (value) ? true : false;
+    },
+
+    get text() {
+        var val = this.nodeValue;
+        return (val === null || this.value === undefined) ?
+            this.innerHTML :
+            val;
+    },
+    get value() {
+        var val = this.getAttribute('value');
+        return (val === null || val === undefined) ?
+            this.textContent :
+            val;
+    },
+    set value(value) {
+        this.setAttribute('value', value);
+    },
+    toString: function() {
+        return '[object HTMLOptionElement]';
     }
 });
 
+Option = function(text, value, defaultSelected, selected) {
+
+    // Not sure if this is correct:
+    //
+    // The element's document must be the active document of the
+    // browsing context of the Window object on which the interface
+    // object of the invoked constructor is found.
+    HTMLOptionElement.apply(this, [document]);
+    this.nodeName = 'OPTION';
+
+    if (arguments.length >= 1) {
+        this.appendChild(document.createTextNode('' + text));
+    }
+    if (arguments.length >= 2) {
+        this.value = value;
+    }
+    if (arguments.length >= 3) {
+        if (defaultSelected) {
+            this.defaultSelected = '';
+        }
+    }
+    if (arguments.length >= 4) {
+        this.selected = (selected) ? true : false;
+    }
+};
+
+Option.prototype = new HTMLOptionElement();
+
+// Named Element Support
+
+function updater(node, value) {
+    node._updateoptions();
+}
+HTMLElement.registerSetAttribute('OPTION', 'name', updater);
+HTMLElement.registerSetAttribute('OPTION', 'id', updater);
 
 /*
 * HTMLParagraphElement - DOM Level 2
@@ -7999,7 +9834,7 @@ __extend__(HTMLOptionElement.prototype, {
 HTMLParagraphElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLParagraphElement.prototype = new HTMLElement;
+HTMLParagraphElement.prototype = new HTMLElement();
 __extend__(HTMLParagraphElement.prototype, {
     toString: function(){
         return '[object HTMLParagraphElement]';
@@ -8007,19 +9842,22 @@ __extend__(HTMLParagraphElement.prototype, {
 });
 
 
-/** 
- * HTMLParamElement - DOM Level 2
+/**
+ * HTMLParamElement
+ *
+ * HTML5: 4.8.6 The param element
+ * http://dev.w3.org/html5/spec/Overview.html#the-param-element
  */
 HTMLParamElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLParamElement.prototype = new HTMLElement;
+HTMLParamElement.prototype = new HTMLElement();
 __extend__(HTMLParamElement.prototype, {
-    get name(){
-        return this.getAttribute('name');
+    get name() {
+        return this.getAttribute('name') || '';
     },
-    set name(value){
-        this.setAttribute('name',value);
+    set name(value) {
+        this.setAttribute('name', value);
     },
     get type(){
         return this.getAttribute('type');
@@ -8039,36 +9877,82 @@ __extend__(HTMLParamElement.prototype, {
     set valueType(value){
         this.setAttribute('valuetype',value);
     },
+    toString: function() {
+        return '[object HTMLParamElement]';
+    }
 });
 
-		
-/** 
+
+/**
  * HTMLScriptElement - DOM Level 2
+ *
+ * HTML5: 4.3.1 The script element
+ * http://dev.w3.org/html5/spec/Overview.html#script
  */
 HTMLScriptElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLScriptElement.prototype = new HTMLElement;
+HTMLScriptElement.prototype = new HTMLElement();
 __extend__(HTMLScriptElement.prototype, {
-    get text(){
-        // text of script is in a child node of the element
-        // scripts with < operator must be in a CDATA node
-        for (var i=0; i<this.childNodes.length; i++) {
-            if (this.childNodes[i].nodeType == Node.CDATA_SECTION_NODE) {
-                return this.childNodes[i].nodeValue;
-            }
-        } 
-        // otherwise there will be a text node containing the script
-        if (this.childNodes[0] && this.childNodes[0].nodeType == Node.TEXT_NODE) {
-            return this.childNodes[0].nodeValue;
- 		}
-        return this.nodeValue;
 
+    /**
+     * HTML5 spec @ http://dev.w3.org/html5/spec/Overview.html#script
+     *
+     * "The IDL attribute text must return a concatenation of the
+     * contents of all the text nodes that are direct children of the
+     * script element (ignoring any other nodes such as comments or
+     * elements), in tree order. On setting, it must act the same way
+     * as the textContent IDL attribute."
+     *
+     * AND... "The term text node refers to any Text node,
+     * including CDATASection nodes; specifically, any Node with node
+     * type TEXT_NODE (3) or CDATA_SECTION_NODE (4)"
+     */
+    get text() {
+        var kids = this.childNodes;
+        var kid;
+        var s = '';
+        var imax = kids.length;
+        for (var i = 0; i < imax; ++i) {
+            kid = kids[i];
+            if (kid.nodeType === Node.TEXT_NODE ||
+                kid.nodeType === Node.CDATA_SECTION_NODE) {
+                s += kid.nodeValue;
+            }
+        }
+        return s;
     },
-    set text(value){
-        this.nodeValue = value;
+
+    /**
+     * HTML5 spec "Can be set, to replace the element's children with
+     * the given value."
+     */
+    set text(value) {
+        // this deletes all children, and make a new single text node
+        // with value
+        this.textContent = value;
+
+        /* Currently we always execute, but this isn't quite right if
+         * the node has *not* been inserted into the document, then it
+         * should *not* fire.  The more detailed answer from the spec:
+         *
+         * When a script element that is neither marked as having
+         * "already started" nor marked as being "parser-inserted"
+         * experiences one of the events listed in the following list,
+         * the user agent must synchronously run the script element:
+         *
+         *   * The script element gets inserted into a document.
+         *   * The script element is in a Document and its child nodes
+         *     are changed.
+         *   * The script element is in a Document and has a src
+         *     attribute set where previously the element had no such
+         *     attribute.
+         *
+         * And no doubt there are other cases as well.
+         */
         Envjs.loadInlineScript(this);
     },
+
     get htmlFor(){
         return this.getAttribute('for');
     },
@@ -8106,124 +9990,150 @@ __extend__(HTMLScriptElement.prototype, {
         this.setAttribute('type',value);
     },
     onload: HTMLEvents.prototype.onload,
-    onerror: HTMLEvents.prototype.onerror
+    onerror: HTMLEvents.prototype.onerror,
+    toString: function() {
+        return '[object HTMLScriptElement]';
+    }
 });
 
 
 /**
- * HTMLSelectElement - DOM Level 2
+ * HTMLSelectElement
+ * HTML5: http://dev.w3.org/html5/spec/Overview.html#the-select-element
  */
 HTMLSelectElement = function(ownerDocument) {
     HTMLTypeValueInputs.apply(this, arguments);
-
     this._oldIndex = -1;
 };
-HTMLSelectElement.prototype = new HTMLTypeValueInputs;
+
+HTMLSelectElement.prototype = new HTMLTypeValueInputs();
 __extend__(HTMLSelectElement.prototype, inputElements_dataProperties);
 __extend__(HTMLButtonElement.prototype, inputElements_size);
 __extend__(HTMLSelectElement.prototype, inputElements_onchange);
 __extend__(HTMLSelectElement.prototype, inputElements_focusEvents);
 __extend__(HTMLSelectElement.prototype, {
 
-    // over-ride the value setter in HTMLTypeValueInputs
-    set value(newValue) {
-       console.log('select set value %s', newValue);
-        var options = this.options,
-            i, index;
-       //console.log('select options length %s', options.length);
-        for (i=0; i<options.length; i++) {
-            if (options[i].value == newValue) {
-                index = i;
-                break;
-            }
-        }
-       //console.log('options index %s', index);
-        if (index !== undefined) {
-           //console.log('select setAttribute value %s', newValue);
-            this.setAttribute('value', newValue);
-            this.selectedIndex = index;
-        }
-    },
     get value() {
-        console.log('select get value');
-        var value = this.getAttribute('value'),
-            index;
-        console.log('select getAttribute value %s', value);
-        if (value === undefined || value === null) {
-            index = this.selectedIndex;
-            console.log('select value index %s', index);
-            if (index > -1){
-                 value = this.options[index].value;
-                 console.log('select value %s', value);
-                 return value;
-            }else{
-                console.log('select value ""');
-                return '';
+        var index = this.selectedIndex;
+        return (index === -1) ? '' : this.options[index].value;
+    },
+    set value(newValue) {
+        var options = this.options;
+        var imax = options.length;
+        for (var i=0; i< imax; ++i) {
+            if (options[i].value == newValue) {
+                this.setAttribute('value', newValue);
+                this.selectedIndex = i;
+                return;
             }
-        } else {
-            return value;
         }
     },
-    get length(){
+    get multiple() {
+        return this.hasAttribute('multiple');
+    },
+    set multiple(value) {
+        if (value) {
+            this.setAttribute('multiple', '');
+        } else {
+            if (this.hasAttribute('multiple')) {
+                this.removeAttribute('multiple');
+            }
+        }
+    },
+    // Returns HTMLOptionsCollection
+    get options() {
+        var nodes = this.getElementsByTagName('option');
+        var alist = [];
+        var i, tmp;
+        for (i = 0; i < nodes.length; ++i) {
+            alist.push(nodes[i]);
+            this[i] = nodes[i];
+            tmp = nodes[i].name;
+            if (tmp) {
+                this[tmp] = nodes[i];
+            }
+            tmp = nodes[i].id;
+            if (tmp) {
+                this[tmp] = nodes[i];
+            }
+        }
+        return new HTMLCollection(alist);
+    },
+    get length() {
         return this.options.length;
     },
-    get multiple(){
-        return this.getAttribute('multiple');
+    item: function(idx) {
+        return this.options[idx];
     },
-    set multiple(value){
-        this.setAttribute('multiple',value);
+    namedItem: function(aname) {
+        return this.options[aname];
     },
-    get options(){
-        return this.getElementsByTagName('option');
-    },
-    get selectedIndex(){
-       //console.log('select get selectedIndex ');
+
+    get selectedIndex() {
         var options = this.options;
-        for(var i=0;i<options.length;i++){
-            if(options[i].selected){
-               //console.log('select get selectedIndex %s', i);
+        var imax = options.length;
+        for (var i=0; i < imax; ++i) {
+            if (options[i].selected) {
+                //console.log('select get selectedIndex %s', i);
                 return i;
             }
-        };
-       //console.log('select get selectedIndex %s', -1);
+        }
+        //console.log('select get selectedIndex %s', -1);
         return -1;
     },
-    
+
     set selectedIndex(value) {
-        var i,
-            options = this.options;
-        for (i=0; i<options.length; i++) {
-           //console.log('select set selectedIndex %s', Number(value));
-            if(i === Number(value)){
-                options[i].selected = true;
-            }else{
-                options[i].selected = false;
-            }
-           //console.log('select options[i].selected %s',options[i].selected);
+        var options = this.options;
+        var num = Number(value);
+        var imax = options.length;
+        for (var i = 0; i < imax; ++i) {
+            options[i].selected = (i === num);
         }
     },
-    get type(){
-        var type = this.getAttribute('type');
-        return type?type:'select-one';
+    get type() {
+        return this.multiple ? 'select-multiple' : 'select-one';
     },
-    
-    add : function(){
-        __add__(this);
+
+    add: function(element, before) {
+        this.appendChild(element);
+        //__add__(this);
     },
-    remove : function(){
+    remove: function() {
         __remove__(this);
+    },
+    toString: function() {
+        return '[object HTMLSelectElement]';
+    }
+});
+
+// Named Element Support
+HTMLElement.registerSetAttribute('SELECT', 'name',
+                                 __updateFormForNamedElement__);
+/**
+ * HTML 5: 4.6.22 The span element
+ * http://dev.w3.org/html5/spec/Overview.html#the-span-element
+ * 
+ */
+HTMLSpanElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+HTMLSpanElement.prototype = new HTMLElement();
+__extend__(HTMLSpanElement.prototype, {
+    toString: function(){
+        return '[object HTMLSpanElement]';
     }
 });
 
 
-
-/** 
+/**
  * HTMLStyleElement - DOM Level 2
+ * HTML5 4.2.6 The style element
+ * http://dev.w3.org/html5/spec/Overview.html#the-style-element
  */
 HTMLStyleElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLStyleElement.prototype = new HTMLElement;
+HTMLStyleElement.prototype = new HTMLElement();
 __extend__(HTMLStyleElement.prototype, {
     get disabled(){
         return this.getAttribute('disabled');
@@ -8242,120 +10152,126 @@ __extend__(HTMLStyleElement.prototype, {
     },
     set type(value){
         this.setAttribute('type',value);
+    },
+    toString: function() {
+        return '[object HTMLStyleElement]';
     }
 });
 
-/** 
+/**
  * HTMLTableElement - DOM Level 2
  * Implementation Provided by Steven Wood
+ *
+ * HTML5: 4.9.1 The table element
+ * http://dev.w3.org/html5/spec/Overview.html#the-table-element
  */
 HTMLTableElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLTableElement.prototype = new HTMLElement;
+HTMLTableElement.prototype = new HTMLElement();
 __extend__(HTMLTableElement.prototype, {
-    
-        get tFoot() { 
+
+    get tFoot() {
         //tFoot returns the table footer.
         return this.getElementsByTagName("tfoot")[0];
     },
-    
+
     createTFoot : function () {
         var tFoot = this.tFoot;
-       
+
         if (!tFoot) {
             tFoot = document.createElement("tfoot");
             this.appendChild(tFoot);
         }
-        
+
         return tFoot;
     },
-    
+
     deleteTFoot : function () {
         var foot = this.tFoot;
         if (foot) {
             foot.parentNode.removeChild(foot);
         }
     },
-    
-    get tHead() { 
+
+    get tHead() {
         //tHead returns the table head.
         return this.getElementsByTagName("thead")[0];
     },
-    
+
     createTHead : function () {
         var tHead = this.tHead;
-       
+
         if (!tHead) {
             tHead = document.createElement("thead");
             this.insertBefore(tHead, this.firstChild);
         }
-        
+
         return tHead;
     },
-    
+
     deleteTHead : function () {
         var head = this.tHead;
         if (head) {
             head.parentNode.removeChild(head);
         }
     },
- 
+
     /*appendChild : function (child) {
-        
-        var tagName;
-        if(child&&child.nodeType==Node.ELEMENT_NODE){
-            tagName = child.tagName.toLowerCase();
-            if (tagName === "tr") {
-                // need an implcit <tbody> to contain this...
-                if (!this.currentBody) {
-                    this.currentBody = document.createElement("tbody");
-                
-                    Node.prototype.appendChild.apply(this, [this.currentBody]);
-                }
-              
-                return this.currentBody.appendChild(child); 
-       
-            } else if (tagName === "tbody" || tagName === "tfoot" && this.currentBody) {
-                this.currentBody = child;
-                return Node.prototype.appendChild.apply(this, arguments);  
-                
-            } else {
-                return Node.prototype.appendChild.apply(this, arguments);
-            }
-        }else{
-            //tables can still have text node from white space
-            return Node.prototype.appendChild.apply(this, arguments);
-        }
-    },*/
-     
+
+      var tagName;
+      if(child&&child.nodeType==Node.ELEMENT_NODE){
+      tagName = child.tagName.toLowerCase();
+      if (tagName === "tr") {
+      // need an implcit <tbody> to contain this...
+      if (!this.currentBody) {
+      this.currentBody = document.createElement("tbody");
+
+      Node.prototype.appendChild.apply(this, [this.currentBody]);
+      }
+
+      return this.currentBody.appendChild(child);
+
+      } else if (tagName === "tbody" || tagName === "tfoot" && this.currentBody) {
+      this.currentBody = child;
+      return Node.prototype.appendChild.apply(this, arguments);
+
+      } else {
+      return Node.prototype.appendChild.apply(this, arguments);
+      }
+      }else{
+      //tables can still have text node from white space
+      return Node.prototype.appendChild.apply(this, arguments);
+      }
+      },*/
+
     get tBodies() {
         return new HTMLCollection(this.getElementsByTagName("tbody"));
-        
+
     },
-    
+
     get rows() {
         return new HTMLCollection(this.getElementsByTagName("tr"));
     },
-    
+
     insertRow : function (idx) {
         if (idx === undefined) {
             throw new Error("Index omitted in call to HTMLTableElement.insertRow ");
         }
-        
-        var rows = this.rows, 
+
+        var rows = this.rows,
             numRows = rows.length,
             node,
-            inserted, 
+            inserted,
             lastRow;
-        
+
         if (idx > numRows) {
             throw new Error("Index > rows.length in call to HTMLTableElement.insertRow");
         }
-        
-        var inserted = document.createElement("tr");
-        // If index is -1 or equal to the number of rows, 
-        // the row is appended as the last row. If index is omitted 
+
+        inserted = document.createElement("tr");
+        // If index is -1 or equal to the number of rows,
+        // the row is appended as the last row. If index is omitted
         // or greater than the number of rows, an error will result
         if (idx === -1 || idx === numRows) {
             this.appendChild(inserted);
@@ -8365,50 +10281,48 @@ __extend__(HTMLTableElement.prototype, {
 
         return inserted;
     },
-    
+
     deleteRow : function (idx) {
         var elem = this.rows[idx];
         elem.parentNode.removeChild(elem);
     },
-    
+
     get summary() {
         return this.getAttribute("summary");
     },
-    
+
     set summary(summary) {
         this.setAttribute("summary", summary);
     },
-    
+
     get align() {
         return this.getAttribute("align");
     },
-    
+
     set align(align) {
         this.setAttribute("align", align);
     },
-    
-     
+
     get bgColor() {
         return this.getAttribute("bgColor");
     },
-    
+
     set bgColor(bgColor) {
         return this.setAttribute("bgColor", bgColor);
     },
-   
+
     get cellPadding() {
         return this.getAttribute("cellPadding");
     },
-    
+
     set cellPadding(cellPadding) {
         return this.setAttribute("cellPadding", cellPadding);
     },
-    
-    
+
     get cellSpacing() {
         return this.getAttribute("cellSpacing");
     },
-    
+
     set cellSpacing(cellSpacing) {
         this.setAttribute("cellSpacing", cellSpacing);
     },
@@ -8416,50 +10330,56 @@ __extend__(HTMLTableElement.prototype, {
     get frame() {
         return this.getAttribute("frame");
     },
-    
-    set frame(frame) { 
+
+    set frame(frame) {
         this.setAttribute("frame", frame);
     },
-    
+
     get rules() {
         return this.getAttribute("rules");
-    }, 
-    
+    },
+
     set rules(rules) {
         this.setAttribute("rules", rules);
-    }, 
-    
+    },
+
     get width() {
         return this.getAttribute("width");
     },
-    
+
     set width(width) {
         this.setAttribute("width", width);
+    },
+    toString: function() {
+        return '[object HTMLTableElement]';
     }
-    
 });
-	
-/* 
-* HTMLxElement - DOM Level 2
-* - Contributed by Steven Wood
-*/
+
+/*
+ * HTMLxElement - DOM Level 2
+ * - Contributed by Steven Wood
+ *
+ * HTML5: 4.9.5 The tbody element
+ * http://dev.w3.org/html5/spec/Overview.html#the-tbody-element
+ * http://dev.w3.org/html5/spec/Overview.html#htmltablesectionelement
+ */
 HTMLTableSectionElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLTableSectionElement.prototype = new HTMLElement;
-__extend__(HTMLTableSectionElement.prototype, {    
-    
+HTMLTableSectionElement.prototype = new HTMLElement();
+__extend__(HTMLTableSectionElement.prototype, {
+
     /*appendChild : function (child) {
-    
-        // disallow nesting of these elements.
-        if (child.tagName.match(/TBODY|TFOOT|THEAD/)) {
-            return this.parentNode.appendChild(child);
-        } else {
-            return Node.prototype.appendChild.apply(this, arguments);
-        }
+
+    // disallow nesting of these elements.
+    if (child.tagName.match(/TBODY|TFOOT|THEAD/)) {
+    return this.parentNode.appendChild(child);
+    } else {
+    return Node.prototype.appendChild.apply(this, arguments);
+    }
 
     },*/
-    
+
     get align() {
         return this.getAttribute("align");
     },
@@ -8467,43 +10387,43 @@ __extend__(HTMLTableSectionElement.prototype, {
     get ch() {
         return this.getAttribute("ch");
     },
-     
+
     set ch(ch) {
         this.setAttribute("ch", ch);
     },
-    
-    // ch gets or sets the alignment character for cells in a column. 
+
+    // ch gets or sets the alignment character for cells in a column.
     set chOff(chOff) {
         this.setAttribute("chOff", chOff);
     },
-     
-    get chOff(chOff) {
+
+    get chOff() {
         return this.getAttribute("chOff");
     },
-     
+
     get vAlign () {
-         return this.getAttribute("vAlign");
+        return this.getAttribute("vAlign");
     },
-    
+
     get rows() {
         return new HTMLCollection(this.getElementsByTagName("tr"));
     },
-    
+
     insertRow : function (idx) {
         if (idx === undefined) {
             throw new Error("Index omitted in call to HTMLTableSectionElement.insertRow ");
         }
-        
+
         var numRows = this.rows.length,
-            node = null;
-        
+        node = null;
+
         if (idx > numRows) {
             throw new Error("Index > rows.length in call to HTMLTableSectionElement.insertRow");
         }
-        
+
         var row = document.createElement("tr");
-        // If index is -1 or equal to the number of rows, 
-        // the row is appended as the last row. If index is omitted 
+        // If index is -1 or equal to the number of rows,
+        // the row is appended as the last row. If index is omitted
         // or greater than the number of rows, an error will result
         if (idx === -1 || idx === numRows) {
             this.appendChild(row);
@@ -8514,124 +10434,223 @@ __extend__(HTMLTableSectionElement.prototype, {
                 node = node.nextSibling;
             }
         }
-            
+
         this.insertBefore(row, node);
-        
+
         return row;
     },
-    
+
     deleteRow : function (idx) {
         var elem = this.rows[idx];
         this.removeChild(elem);
-    }
+    },
 
+    toString: function() {
+        return '[object HTMLTableSectionElement]';
+    }
 });
 
-
-/** 
- * HTMLTableCellElement - DOM Level 2
- * Implementation Provided by Steven Wood
+/**
+ * HTMLTableCellElement
+ * base interface for TD and TH
+ *
+ * HTML5: 4.9.11 Attributes common to td and th elements
+ * http://dev.w3.org/html5/spec/Overview.html#htmltablecellelement
  */
 HTMLTableCellElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLTableCellElement.prototype = new HTMLElement;
+HTMLTableCellElement.prototype = new HTMLElement();
 __extend__(HTMLTableCellElement.prototype, {
-    
-    // TODO :
-    
+
+
+    // TOOD: attribute unsigned long  colSpan;
+    // TODO: attribute unsigned long  rowSpan;
+    // TODO: attribute DOMString      headers;
+    // TODO: readonly attribute long  cellIndex;
+
+    // Not really necessary but might be helpful in debugging
+    toString: function() {
+        return '[object HTMLTableCellElement]';
+    }
+
 });
 
 /**
+ * HTMLTableDataCellElement
+ * HTML5: 4.9.9 The td Element
+ * http://dev.w3.org/html5/spec/Overview.html#the-td-element
+ */
+HTMLTableDataCellElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+HTMLTableDataCellElement.prototype = new HTMLTableCellElement();
+__extend__(HTMLTableDataCellElement.prototype, {
+
+    // adds no new properties or methods
+
+    toString: function() {
+        return '[object HTMLTableDataCellElement]';
+    }
+});
+
+/**
+ * HTMLTableHeaderCellElement
+ * HTML5: 4.9.10 The th Element
+ * http://dev.w3.org/html5/spec/Overview.html#the-th-element
+ */
+HTMLTableHeaderCellElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
+HTMLTableHeaderCellElement.prototype = new HTMLTableCellElement();
+__extend__(HTMLTableHeaderCellElement.prototype, {
+
+    // TODO:  attribute DOMString scope
+
+    toString: function() {
+        return '[object HTMLTableHeaderCellElement]';
+    }
+});
+
+
+/**
  * HTMLTextAreaElement - DOM Level 2
+ * HTML5: 4.10.11 The textarea element
+ * http://dev.w3.org/html5/spec/Overview.html#the-textarea-element
  */
 HTMLTextAreaElement = function(ownerDocument) {
     HTMLInputAreaCommon.apply(this, arguments);
+    this._rawvalue = null;
 };
-HTMLTextAreaElement.prototype = new HTMLInputAreaCommon;
+HTMLTextAreaElement.prototype = new HTMLInputAreaCommon();
 __extend__(HTMLTextAreaElement.prototype, {
     get cols(){
-        return this.getAttribute('cols');
+        return Number(this.getAttribute('cols')||'-1');
     },
     set cols(value){
         this.setAttribute('cols', value);
     },
     get rows(){
-        return this.getAttribute('rows');
+        return Number(this.getAttribute('rows')||'-1');
     },
     set rows(value){
         this.setAttribute('rows', value);
+    },
+
+    /*
+     * read-only
+     */
+    get type() {
+        return this.getAttribute('type') || 'textarea';
+    },
+
+    /**
+     * This modifies the text node under the widget
+     */
+    get defaultValue() {
+        return this.textContent;
+    },
+    set defaultValue(value) {
+        this.textContent = value;
+    },
+
+    /**
+     * http://dev.w3.org/html5/spec/Overview.html#concept-textarea-raw-value
+     */
+    get value() {
+        return (this._rawvalue === null) ? this.defaultValue : this._rawvalue;
+    },
+    set value(value) {
+        this._rawvalue = value;
+    },
+    toString: function() {
+        return '[object HTMLTextAreaElement]';
     }
 });
 
+// Named Element Support
+HTMLElement.registerSetAttribute('TEXTAREA', 'name',
+                                 __updateFormForNamedElement__);
 
-/** 
+/**
  * HTMLTitleElement - DOM Level 2
+ *
+ * HTML5: 4.2.2 The title element
+ * http://dev.w3.org/html5/spec/Overview.html#the-title-element-0
  */
 HTMLTitleElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLTitleElement.prototype = new HTMLElement;
+HTMLTitleElement.prototype = new HTMLElement();
 __extend__(HTMLTitleElement.prototype, {
     get text() {
         return this.innerText;
     },
 
     set text(titleStr) {
-        this.textContent = titleStr; 
+        this.textContent = titleStr;
+    },
+    toString: function() {
+        return '[object HTMLTitleElement]';
     }
 });
 
 
 
-/** 
+/**
  * HTMLRowElement - DOM Level 2
  * Implementation Provided by Steven Wood
+ *
+ * HTML5: 4.9.8 The tr element
+ * http://dev.w3.org/html5/spec/Overview.html#the-tr-element
  */
 HTMLTableRowElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLTableRowElement.prototype = new HTMLElement;
+HTMLTableRowElement.prototype = new HTMLElement();
 __extend__(HTMLTableRowElement.prototype, {
-    
+
     /*appendChild : function (child) {
-    
-       var retVal = Node.prototype.appendChild.apply(this, arguments);
-       retVal.cellIndex = this.cells.length -1;
-             
-       return retVal;
-    },*/
+
+      var retVal = Node.prototype.appendChild.apply(this, arguments);
+      retVal.cellIndex = this.cells.length -1;
+
+      return retVal;
+      },*/
     // align gets or sets the horizontal alignment of data within cells of the row.
     get align() {
         return this.getAttribute("align");
     },
-     
+
     get bgColor() {
         return this.getAttribute("bgcolor");
     },
-         
+
     get cells() {
         var nl = this.getElementsByTagName("td");
         return new HTMLCollection(nl);
     },
-       
+
     get ch() {
         return this.getAttribute("ch");
     },
-     
+
     set ch(ch) {
         this.setAttribute("ch", ch);
     },
-    
-    // ch gets or sets the alignment character for cells in a column. 
+
+    // ch gets or sets the alignment character for cells in a column.
     set chOff(chOff) {
         this.setAttribute("chOff", chOff);
     },
-     
-    get chOff(chOff) {
+
+    get chOff() {
         return this.getAttribute("chOff");
     },
-   
+
+    /**
+     * http://dev.w3.org/html5/spec/Overview.html#dom-tr-rowindex
+     */
     get rowIndex() {
         var nl = this.parentNode.childNodes;
         for (var i=0; i<nl.length; i++) {
@@ -8639,8 +10658,12 @@ __extend__(HTMLTableRowElement.prototype, {
                 return i;
             }
         }
+        return -1;
     },
 
+    /**
+     * http://dev.w3.org/html5/spec/Overview.html#dom-tr-sectionrowindex
+     */
     get sectionRowIndex() {
         var nl = this.parentNode.getElementsByTagName(this.tagName);
         for (var i=0; i<nl.length; i++) {
@@ -8648,30 +10671,31 @@ __extend__(HTMLTableRowElement.prototype, {
                 return i;
             }
         }
+        return -1;
     },
-     
+
     get vAlign () {
-         return this.getAttribute("vAlign");
+        return this.getAttribute("vAlign");
     },
 
     insertCell : function (idx) {
         if (idx === undefined) {
             throw new Error("Index omitted in call to HTMLTableRow.insertCell");
         }
-        
+
         var numCells = this.cells.length,
-            node = null;
-        
+        node = null;
+
         if (idx > numCells) {
             throw new Error("Index > rows.length in call to HTMLTableRow.insertCell");
         }
-        
+
         var cell = document.createElement("td");
 
         if (idx === -1 || idx === numCells) {
             this.appendChild(cell);
         } else {
-            
+
 
             node = this.firstChild;
 
@@ -8679,29 +10703,49 @@ __extend__(HTMLTableRowElement.prototype, {
                 node = node.nextSibling;
             }
         }
-            
+
         this.insertBefore(cell, node);
         cell.cellIndex = idx;
-          
+
         return cell;
     },
-
-    
     deleteCell : function (idx) {
         var elem = this.cells[idx];
         this.removeChild(elem);
+    },
+    toString: function() {
+        return '[object HTMLTableRowElement]';
     }
 
 });
 
+/*
+ * HTMLUListElement
+ * HTML5: 4.5.7 The ul Element
+ * http://dev.w3.org/html5/spec/Overview.html#htmlhtmlelement
+ */
+HTMLUListElement = function(ownerDocument) {
+    HTMLElement.apply(this, arguments);
+};
 
-/** 
+HTMLUListElement.prototype = new HTMLElement();
+__extend__(HTMLUListElement.prototype, {
+
+    // no additional properties or elements
+
+    toString: function() {
+        return '[object HTMLUListElement]';
+    }
+});
+
+
+/**
  * HTMLUnknownElement DOM Level 2
  */
 HTMLUnknownElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
-HTMLUnknownElement.prototype = new HTMLElement;
+HTMLUnknownElement.prototype = new HTMLElement();
 __extend__(HTMLUnknownElement.prototype,{
     toString: function(){
         return '[object HTMLUnknownElement]';
@@ -8714,23 +10758,33 @@ __extend__(HTMLUnknownElement.prototype,{
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 
 /**
  * DOM Style Level 2
  */
 var CSS2Properties,
     CSSRule,
-    CSSStyleSheet;
-    
+    CSSStyleRule,
+    CSSImportRule,
+    CSSMediaRule,
+    CSSFontFaceRule,
+    CSSPageRule,
+    CSSRuleList,
+    CSSStyleSheet,
+    StyleSheet,
+    StyleSheetList;
+;
+
 /*
- * Envjs css.1.2.0.6 
+ * Envjs css.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
@@ -8740,17 +10794,19 @@ var CSS2Properties,
 /**
  * @author john resig
  */
-// Helper method for extending one object with another.  
+// Helper method for extending one object with another.
 function __extend__(a,b) {
     for ( var i in b ) {
         var g = b.__lookupGetter__(i), s = b.__lookupSetter__(i);
         if ( g || s ) {
-            if ( g ) a.__defineGetter__(i, g);
-            if ( s ) a.__defineSetter__(i, s);
-        } else
+            if ( g ) { a.__defineGetter__(i, g); }
+            if ( s ) { a.__defineSetter__(i, s); }
+        } else {
             a[i] = b[i];
+        }
     } return a;
-};
+}
+
 /**
  * @author john resig
  */
@@ -8760,368 +10816,456 @@ function __setArray__( target, array ) {
     // is a super-fast way to populate an object with array-like properties
     target.length = 0;
     Array.prototype.push.apply( target, array );
-};
+}
+
+/**
+ * @author ariel flesler
+ *    http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
+ * @param {Object} str
+ */
+function __trim__( str ){
+    return (str || "").replace( /^\s+|\s+$/g, "" );
+}
+
 /*
-* CSS2Properties - DOM Level 2 CSS
-*/
-//var __cssproperties__ = 0;
+ * Interface DocumentStyle (introduced in DOM Level 2)
+ * http://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113/stylesheets.html#StyleSheets-StyleSheet-DocumentStyle
+ *
+ * interface DocumentStyle {
+ *   readonly attribute StyleSheetList   styleSheets;
+ * };
+ *
+ */
+__extend__(Document.prototype, {
+    get styleSheets() {
+        if (! this._styleSheets) {
+            this._styleSheets = new StyleSheetList();
+        }
+        return this._styleSheets;
+    }
+});
+/*
+ * CSS2Properties - DOM Level 2 CSS
+ * Renamed to CSSStyleDeclaration??
+ */
+
+var __toCamelCase__ = function(name) {
+    if (name) {
+        return name.replace(/\-(\w)/g, function(all, letter) {
+            return letter.toUpperCase();
+        });
+    }
+    return name;
+};
+
+var __toDashed__ = function(camelCaseName) {
+    if (camelCaseName) {
+        return camelCaseName.replace(/[A-Z]/g, function(all) {
+            return '-' + all.toLowerCase();
+        });
+    }
+    return camelCaseName;
+};
+
 CSS2Properties = function(element){
     //console.log('css2properties %s', __cssproperties__++);
-    this.styleIndex = __supportedStyles__();//non-standard
+    this.styleIndex = __supportedStyles__;//non-standard
     this.type = element.tagName;//non-standard
-    __setArray__(this,[]);
-    __cssTextToStyles__(this, element.getAttribute('style')||'');
+    __setArray__(this, []);
+    __cssTextToStyles__(this, element.cssText || '');
 };
 __extend__(CSS2Properties.prototype, {
-    get cssText(){
-        var css = '',
-            i;
-        for(i=0;i<this.length;i++){
-            css+=this[i]+": "+this.getPropertyValue(this[i])+';';
-            if(i+1<this.length)
-                css+=" ";
+    get cssText() {
+        var i, css = [];
+        for (i = 0; i < this.length; ++i) {
+            css.push(this[i] + ': ' + this.getPropertyValue(this[i]) + ';');
         }
-        return css;
+        return css.join(' ');
     },
-    set cssText(cssText){ 
-        __cssTextToStyles__(this, cssText); 
+    set cssText(cssText) {
+        __cssTextToStyles__(this, cssText);
     },
-    getPropertyCSSValue : function(name){
+    getPropertyCSSValue: function(name) {
         //?
     },
-    getPropertyPriority : function(){
-        
+    getPropertyPriority: function() {
+
     },
-    getPropertyValue : function(name){
-        var index;
-        if(__toCamelCase__(name) in this.styleIndex){
-            //$info(name +' in style index');
-            return this[__toCamelCase__(name)];
-        }else{
+    getPropertyValue: function(name) {
+        var index, cname = __toCamelCase__(name);
+        if (cname in this.styleIndex) {
+            return this[cname];
+        } else {
             index = Array.prototype.indexOf.apply(this, [name]);
-            if(index > -1)
+            if (index > -1) {
                 return this[index];
+            }
         }
-        //$info(name +' not found');
         return null;
     },
-    item : function(index){
+    item: function(index) {
         return this[index];
     },
-    removeProperty: function(name){
+    removeProperty: function(name) {
         this.styleIndex[name] = null;
         name = __toDashed__(name);
         var index = Array.prototype.indexOf.apply(this, [name]);
-        if(index > -1){
+        if (index > -1) {
             Array.prototype.splice.apply(this, [1,index]);
         }
     },
-    setProperty: function(name, value, priority){
-        //$info('setting css property '+name+' : '+value);
+    setProperty: function(name, value, priority) {
+        var nval;
         name = __toCamelCase__(name);
-        if(value && (value+'').match(/^([0-9]*\.)?[0-9]+$/)){
-            value = Number(value);
-            //console.log('converted %s to number %s', name, value);
-        }
-        if(name in this.styleIndex  && value !== undefined){
-            //$info('setting camel case css property ');
-            this.styleIndex[name] = value;
-            //$info('setting dashed name css property ');
+        if (value !== undefined && name in this.styleIndex) {
+            // NOTE:  parseFloat('300px') ==> 300  no
+            // NOTE:  Number('300px') ==> Nan      yes
+            nval = Number(value);
+            this.styleIndex[name] = isNaN(nval) ? value : nval;
             name = __toDashed__(name);
-            if( Array.prototype.indexOf.apply(this, [name]) === -1 ){
+            if (Array.prototype.indexOf.apply(this, [name]) === -1 ){
                 Array.prototype.push.apply(this,[name]);
             }
         }
-        //$info('finished setting css property '+name+' : '+value);
     },
-    toString:function(){
+    toString: function() {
         return '[object CSS2Properties]';
     }
 });
 
 
 
-var __cssTextToStyles__ = function(css2props, cssText){
-    
+var __cssTextToStyles__ = function(css2props, cssText) {
     //console.log('__cssTextToStyles__ %s %s', css2props, cssText);
     //var styleArray=[];
-    var style, styles = cssText.split(';');
-    for ( var i = 0; i < styles.length; i++ ) {
-        //$log("Adding style property " + styles[i]);
-    	style = styles[i].split(':');
-        //$log(" style  " + style[0]);
-    	if ( style.length == 2 ){
-            //$log(" value  " + style[1]);
-    	    css2props.setProperty( style[0].replace(" ",'','g'), style[1].replace(" ",'','g'));
-    	}
+    var i, style, styles = cssText.split(';');
+    for (i = 0; i < styles.length; ++i) {
+        style = styles[i].split(':');
+        if (style.length === 2) {
+            css2props.setProperty(style[0].replace(' ', '', 'g'),
+                                  style[1].replace(' ', '', 'g'));
+        }
     }
 };
 
-var __toCamelCase__ = function(name) {
-    //$info('__toCamelCase__'+name);
-    if(name){
-    	return name.replace(/\-(\w)/g, function(all, letter){
-    		return letter.toUpperCase();
-    	});
-    }
-    return name;
-};
-
-var __toDashed__ = function(camelCaseName) {
-    //$info("__toDashed__"+camelCaseName);
-    if(camelCaseName){
-    	return camelCaseName.replace(/[A-Z]/g, function(all) {
-    		return "-" + all.toLowerCase();
-    	});
-    }
-    return camelCaseName;
-};
-
-//Obviously these arent all supported but by commenting out various sections
-//this provides a single location to configure what is exposed as supported.
-var __supportedStyles__ = function(){
-    return {
-        azimuth:                null,
-        background:	            null,
-        backgroundAttachment:	null,
-        backgroundColor:	    null,
-        backgroundImage:	    null,
-        backgroundPosition:	    null,
-        backgroundRepeat:	    null,
-        border:	                null,
-        borderBottom:	        null,
-        borderBottomColor:	    null,
-        borderBottomStyle:	    null,
-        borderBottomWidth:	    null,
-        borderCollapse:	        null,
-        borderColor:	        null,
-        borderLeft:	            null,
-        borderLeftColor:	    null,
-        borderLeftStyle:	    null,
-        borderLeftWidth:	    null,
-        borderRight:	        null,
-        borderRightColor:	    null,
-        borderRightStyle:	    null,
-        borderRightWidth:	    null,
-        borderSpacing:	        null,
-        borderStyle:	        null,
-        borderTop:	            null,
-        borderTopColor:	        null,
-        borderTopStyle:	        null,
-        borderTopWidth:	        null,
-        borderWidth:	        null,
-        bottom:	                null,
-        captionSide:	        null,
-        clear:	                null,
-        clip:	                null,
-        color:	                null,
-        content:	            null,
-        counterIncrement:	    null,
-        counterReset:	        null,
-        cssFloat:	            null,
-        cue:	                null,
-        cueAfter:	            null,
-        cueBefore:	            null,
-        cursor:	                null,
-        direction:	            'ltr',
-        display:	            null,
-        elevation:	            null,
-        emptyCells:	            null,
-        font:	                null,
-        fontFamily:	            null,
-        fontSize:	            "1em",
-        fontSizeAdjust:	null,
-        fontStretch:	null,
-        fontStyle:	null,
-        fontVariant:	null,
-        fontWeight:	null,
-        height:	'',
-        left:	null,
-        letterSpacing:	null,
-        lineHeight:	null,
-        listStyle:	null,
-        listStyleImage:	null,
-        listStylePosition:	null,
-        listStyleType:	null,
-        margin:	null,
-        marginBottom:	"0px",
-        marginLeft:	"0px",
-        marginRight:	"0px",
-        marginTop:	"0px",
-        markerOffset:	null,
-        marks:	null,
-        maxHeight:	null,
-        maxWidth:	null,
-        minHeight:	null,
-        minWidth:	null,
-        opacity:	1,
-        orphans:	null,
-        outline:	null,
-        outlineColor:	null,
-        outlineOffset:	null,
-        outlineStyle:	null,
-        outlineWidth:	null,
-        overflow:	null,
-        overflowX:	null,
-        overflowY:	null,
-        padding:	null,
-        paddingBottom:	"0px",
-        paddingLeft:	"0px",
-        paddingRight:	"0px",
-        paddingTop:	"0px",
-        page:	null,
-        pageBreakAfter:	null,
-        pageBreakBefore:	null,
-        pageBreakInside:	null,
-        pause:	null,
-        pauseAfter:	null,
-        pauseBefore:	null,
-        pitch:	null,
-        pitchRange:	null,
-        position:	null,
-        quotes:	null,
-        richness:	null,
-        right:	null,
-        size:	null,
-        speak:	null,
-        speakHeader:	null,
-        speakNumeral:	null,
-        speakPunctuation:	null,
-        speechRate:	null,
-        stress:	null,
-        tableLayout:	null,
-        textAlign:	null,
-        textDecoration:	null,
-        textIndent:	null,
-        textShadow:	null,
-        textTransform:	null,
-        top:	null,
-        unicodeBidi:	null,
-        verticalAlign:	null,
-        visibility:	null,
-        voiceFamily:	null,
-        volume:	null,
-        whiteSpace:	null,
-        widows:	null,
-        width:	'1px',
-        wordSpacing:	null,
-        zIndex:	1
-    };
+//Obviously these arent all supported but by commenting out various
+//sections this provides a single location to configure what is
+//exposed as supported.
+var __supportedStyles__ = {
+    azimuth:                null,
+    background:             null,
+    backgroundAttachment:   null,
+    backgroundColor:        'rgb(0,0,0)',
+    backgroundImage:        null,
+    backgroundPosition:     null,
+    backgroundRepeat:       null,
+    border:                 null,
+    borderBottom:           null,
+    borderBottomColor:      null,
+    borderBottomStyle:      null,
+    borderBottomWidth:      null,
+    borderCollapse:         null,
+    borderColor:            null,
+    borderLeft:             null,
+    borderLeftColor:        null,
+    borderLeftStyle:        null,
+    borderLeftWidth:        null,
+    borderRight:            null,
+    borderRightColor:       null,
+    borderRightStyle:       null,
+    borderRightWidth:       null,
+    borderSpacing:          null,
+    borderStyle:            null,
+    borderTop:              null,
+    borderTopColor:         null,
+    borderTopStyle:         null,
+    borderTopWidth:         null,
+    borderWidth:            null,
+    bottom:                 null,
+    captionSide:            null,
+    clear:                  null,
+    clip:                   null,
+    color:                  null,
+    content:                null,
+    counterIncrement:       null,
+    counterReset:           null,
+    cssFloat:               null,
+    cue:                    null,
+    cueAfter:               null,
+    cueBefore:              null,
+    cursor:                 null,
+    direction:              'ltr',
+    display:                null,
+    elevation:              null,
+    emptyCells:             null,
+    font:                   null,
+    fontFamily:             null,
+    fontSize:               '1em',
+    fontSizeAdjust:         null,
+    fontStretch:            null,
+    fontStyle:              null,
+    fontVariant:            null,
+    fontWeight:             null,
+    height:                 '',
+    left:                   null,
+    letterSpacing:          null,
+    lineHeight:             null,
+    listStyle:              null,
+    listStyleImage:         null,
+    listStylePosition:      null,
+    listStyleType:          null,
+    margin:                 null,
+    marginBottom:           '0px',
+    marginLeft:             '0px',
+    marginRight:            '0px',
+    marginTop:              '0px',
+    markerOffset:           null,
+    marks:                  null,
+    maxHeight:              null,
+    maxWidth:               null,
+    minHeight:              null,
+    minWidth:               null,
+    opacity:                1,
+    orphans:                null,
+    outline:                null,
+    outlineColor:           null,
+    outlineOffset:          null,
+    outlineStyle:           null,
+    outlineWidth:           null,
+    overflow:               null,
+    overflowX:              null,
+    overflowY:              null,
+    padding:                null,
+    paddingBottom:          '0px',
+    paddingLeft:            '0px',
+    paddingRight:           '0px',
+    paddingTop:             '0px',
+    page:                   null,
+    pageBreakAfter:         null,
+    pageBreakBefore:        null,
+    pageBreakInside:        null,
+    pause:                  null,
+    pauseAfter:             null,
+    pauseBefore:            null,
+    pitch:                  null,
+    pitchRange:             null,
+    position:               null,
+    quotes:                 null,
+    richness:               null,
+    right:                  null,
+    size:                   null,
+    speak:                  null,
+    speakHeader:            null,
+    speakNumeral:           null,
+    speakPunctuation:       null,
+    speechRate:             null,
+    stress:                 null,
+    tableLayout:            null,
+    textAlign:              null,
+    textDecoration:         null,
+    textIndent:             null,
+    textShadow:             null,
+    textTransform:          null,
+    top:                    null,
+    unicodeBidi:            null,
+    verticalAlign:          null,
+    visibility:             '',
+    voiceFamily:            null,
+    volume:                 null,
+    whiteSpace:             null,
+    widows:                 null,
+    width:                  '1px',
+    wordSpacing:            null,
+    zIndex:                 1
 };
 
 var __displayMap__ = {
-		"DIV"      : "block",
-		"P"        : "block",
-		"A"        : "inline",
-		"CODE"     : "inline",
-		"PRE"      : "block",
-		"SPAN"     : "inline",
-		"TABLE"    : "table",
-		"THEAD"    : "table-header-group",
-		"TBODY"    : "table-row-group",
-		"TR"       : "table-row",
-		"TH"       : "table-cell",
-		"TD"       : "table-cell",
-		"UL"       : "block",
-		"LI"       : "list-item"
-};
-var __styleMap__ = __supportedStyles__();
-
-for(var style in __supportedStyles__()){
-    (function(name){
-        if(name === 'width' || name === 'height'){
-            CSS2Properties.prototype.__defineGetter__(name, function(){
-                if(this.display==='none'){
-                    return '0px';
-                }
-                //$info(name+' = '+this.getPropertyValue(name));
-                return this.styleIndex[name];
-            });
-        }else if(name === 'display'){
-            //display will be set to a tagName specific value if ""
-            CSS2Properties.prototype.__defineGetter__(name, function(){
-                var val = this.styleIndex[name];
-                val = val?val:__displayMap__[this.type];
-                //$log(" css2properties.get  " + name + "="+val+" for("+this.__element__.tagName+")");
-                return val;
-            });
-        }else{
-            CSS2Properties.prototype.__defineGetter__(name, function(){
-                //$log(" css2properties.get  " + name + "="+this.styleIndex[name]);
-                return this.styleIndex[name];
-            });
-       }
-       CSS2Properties.prototype.__defineSetter__(name, function(value){
-           //$log(" css2properties.set  " + name +"="+value);
-           this.setProperty(name, value);
-       });
-    })(style);
+    DIV      : 'block',
+    P        : 'block',
+    A        : 'inline',
+    CODE     : 'inline',
+    PRE      : 'block',
+    SPAN     : 'inline',
+    TABLE    : 'table',
+    THEAD    : 'table-header-group',
+    TBODY    : 'table-row-group',
+    TR       : 'table-row',
+    TH       : 'table-cell',
+    TD       : 'table-cell',
+    UL       : 'block',
+    LI       : 'list-item'
 };
 
+for (var style in __supportedStyles__) {
+    if (__supportedStyles__.hasOwnProperty(style)) {
+        (function(name) {
+            if (name === 'width' || name === 'height') {
+                CSS2Properties.prototype.__defineGetter__(name, function() {
+                    if (this.display === 'none'){
+                        return '0px';
+                    }
+                    return this.styleIndex[name];
+                });
+            } else if (name === 'display') {
+                //display will be set to a tagName specific value if ''
+                CSS2Properties.prototype.__defineGetter__(name, function() {
+                    var val = this.styleIndex[name];
+                    val = val ? val :__displayMap__[this.type];
+                    return val;
+                });
+            } else {
+                CSS2Properties.prototype.__defineGetter__(name, function() {
+                    return this.styleIndex[name];
+                });
+            }
+            CSS2Properties.prototype.__defineSetter__(name, function(value) {
+                this.setProperty(name, value);
+            });
+        }(style));
+    }
+}
 
-/* 
-* CSSRule - DOM Level 2
-*/
-CSSRule = function(options){
-  var $style, 
-      $selectorText = options.selectorText?options.selectorText:"";
-      $style = new CSS2Properties({
-          cssText:options.cssText?options.cssText:null
-      });
+/*
+ * CSSRule - DOM Level 2
+ */
+CSSRule = function(options) {
+
+
+
+    var $style,
+    $selectorText = options.selectorText ? options.selectorText : '';
+    $style = new CSS2Properties({
+        cssText: options.cssText ? options.cssText : null
+    });
+
     return __extend__(this, {
-      get style(){
-          return $style;
-      },
-      get selectorText(){
-          return $selectorText;
-      },
-      set selectorText(selectorText){
-          $selectorText = selectorText;
-      },
+        get style(){
+            return $style;
+        },
+        get selectorText(){
+            return $selectorText;
+        },
+        set selectorText(selectorText){
+            $selectorText = selectorText;
+        },
         toString : function(){
             return "[object CSSRule]";
         }
     });
 };
+CSSRule.STYLE_RULE     =  1;
+CSSRule.IMPORT_RULE    =  3;
+CSSRule.MEDIA_RULE     =  4;
+CSSRule.FONT_FACE_RULE =  5;
+CSSRule.PAGE_RULE      =  6;
+//CSSRule.NAMESPACE_RULE = 10;
 
 
-/* 
-* CSSStyleSheet - DOM Level 2
-*/
+CSSStyleRule = function() {
+
+};
+
+CSSImportRule = function() {
+
+};
+
+CSSMediaRule = function() {
+
+};
+
+CSSFontFaceRule = function() {
+
+};
+
+CSSPageRule = function() {
+
+};
+
+
+CSSRuleList = function(data) {
+    this.length = 0;
+    __setArray__(this, data);
+};
+
+__extend__(CSSRuleList.prototype, {
+    item : function(index) {
+        if ((index >= 0) && (index < this.length)) {
+            // bounds check
+            return this[index];
+        }
+        return null;
+    },
+    toString: function() {
+        return '[object CSSRuleList]';
+    }
+});
+
+/**
+ * StyleSheet
+ * http://dev.w3.org/csswg/cssom/#stylesheet
+ *
+ * interface StyleSheet {
+ *   readonly attribute DOMString type;
+ *   readonly attribute DOMString href;
+ *   readonly attribute Node ownerNode;
+ *   readonly attribute StyleSheet parentStyleSheet;
+ *   readonly attribute DOMString title;
+ *   [PutForwards=mediaText] readonly attribute MediaList media;
+ *          attribute boolean disabled;
+ * };
+ */
+StyleSheet = function() {
+}
+
+/*
+ * CSSStyleSheet
+ * http://dev.w3.org/csswg/cssom/#cssstylesheet
+ *
+ * interface CSSStyleSheet : StyleSheet {
+ *   readonly attribute CSSRule ownerRule;
+ *   readonly attribute CSSRuleList cssRules;
+ *   unsigned long insertRule(DOMString rule, unsigned long index);
+ *   void deleteRule(unsigned long index);
+ * };
+ */
 CSSStyleSheet = function(options){
-    var $cssRules, 
-        $disabled = options.disabled?options.disabled:false,
-        $href = options.href?options.href:null,
-        $parentStyleSheet = options.parentStyleSheet?options.parentStyleSheet:null,
-        $title = options.title?options.title:"",
+    var $cssRules,
+        $disabled = options.disabled ? options.disabled : false,
+        $href = options.href ? options.href : null,
+        $parentStyleSheet = options.parentStyleSheet ? options.parentStyleSheet : null,
+        $title = options.title ? options.title : "",
         $type = "text/css";
-        
+
     function parseStyleSheet(text){
         //$debug("parsing css");
         //this is pretty ugly, but text is the entire text of a stylesheet
         var cssRules = [];
-    	if (!text) text = "";
-    	text = trim(text.replace(/\/\*(\r|\n|.)*\*\//g,""));
-    	// TODO: @import ?
-    	var blocks = text.split("}");
-    	blocks.pop();
-    	var i, len = blocks.length;
-    	var definition_block, properties, selectors;
-    	for (i=0; i<len; i++){
-    		definition_block = blocks[i].split("{");
-    		if(definition_block.length === 2){
-          		selectors = definition_block[0].split(",");
-          		for(var j=0;j<selectors.length;j++){
-          		    cssRules.push(new CSSRule({
-          		        selectorText:selectors[j],
-          		        cssText:definition_block[1]
-          		    }));
-          		}
-          		__setArray__($cssRules, cssRules);
-    		}
-    	}
-    };
-    parseStyleSheet(options.text);
+        if (!text) {
+            text = '';
+        }
+        text = __trim__(text.replace(/\/\*(\r|\n|.)*\*\//g,""));
+        // TODO: @import
+        var blocks = text.split("}");
+        blocks.pop();
+        var i, j, len = blocks.length;
+        var definition_block, properties, selectors;
+        for (i=0; i<len; i++) {
+            definition_block = blocks[i].split("{");
+            if (definition_block.length === 2) {
+                selectors = definition_block[0].split(",");
+                for (j=0; j<selectors.length; j++) {
+                    cssRules.push(new CSSRule({
+                        selectorText : __trim__(selectors[j]),
+                        cssText      : definition_block[1]
+                    }));
+                }
+            }
+        }
+        return cssRules;
+    }
+
+    $cssRules = new CSSRuleList(parseStyleSheet(options.textContent));
+
     return __extend__(this, {
         get cssRules(){
             return $cssRules;
@@ -9151,12 +11295,35 @@ CSSStyleSheet = function(options){
     });
 };
 
+StyleSheetList = function() {
+}
+StyleSheetList.prototype = new Array();
+__extend__(StyleSheetList.prototype, {
+    item : function(index) {
+        if ((index >= 0) && (index < this.length)) {
+            // bounds check
+            return this[index];
+        }
+        return null;
+    },
+    toString: function() {
+        return '[object StyleSheetList]';
+    }
+});
+/**
+ * This extends HTMLElement to handle CSS-specific interfaces.
+ *
+ * More work / research would be needed to extend just (DOM) Element
+ * for xml use and additional changes for just HTMLElement.
+ */
 
 
 /**
- * @author envjs team
+ * Replace or add  the getter for 'style'
+ *
+ * This could be wrapped in a closure
  */
-$css2properties = [{}];
+var $css2properties = [{}];
 
 __extend__(HTMLElement.prototype, {
     get style(){
@@ -9166,22 +11333,37 @@ __extend__(HTMLElement.prototype, {
         }
         return $css2properties[this.css2uuid];
     },
-    setAttribute: function (name, value) {
-        Element.prototype.setAttribute.apply(this,[name, value]);
-        if (name === "style") {
-            __updateCss2Props__(this, value);
-        }
-    }
 });
 
-var __updateCss2Props__ = function(elem, values){
+/**
+ * Change for how 'setAttribute("style", ...)' works
+ *
+ * We are truly adding functionality to HtmlElement.setAttribute, not
+ * replacing it.  So we need to save the old one first, call it, then
+ * do our stuff.  If we need to do more hacks like this, HTMLElement
+ * (or regular Element) needs to have a hooks array or dispatch table
+ * for global changes.
+ *
+ * This could be wrapped in a closure if desired.
+ */
+var updateCss2Props = function(elem, values) {
     //console.log('__updateCss2Props__ %s %s', elem, values);
     if ( !elem.css2uuid ) {
         elem.css2uuid = $css2properties.length;
         $css2properties[elem.css2uuid] = new CSS2Properties(elem);
     }
     __cssTextToStyles__($css2properties[elem.css2uuid], values);
-};
+}
+
+var origSetAttribute =  HTMLElement.prototype.setAttribute;
+
+HTMLElement.prototype.setAttribute = function(name, value) {
+    //console.log("CSS set attribute: " + name + ", " + value);
+    origSetAttribute.apply(this, arguments);
+    if (name === "style") {
+        updateCss2Props(this, value);
+    }
+}
 
 /**
  * @author john resig & the envjs team
@@ -9189,8 +11371,8 @@ var __updateCss2Props__ = function(elem, values){
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 
 //these are both non-standard globals that
 //provide static namespaces and functions
@@ -9200,12 +11382,13 @@ var XMLParser = {},
 
     
 /*
- * Envjs parser.1.2.0.6 
+ * Envjs parser.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
@@ -9215,17 +11398,19 @@ var XMLParser = {},
 /**
  * @author john resig
  */
-// Helper method for extending one object with another.  
+// Helper method for extending one object with another.
 function __extend__(a,b) {
     for ( var i in b ) {
         var g = b.__lookupGetter__(i), s = b.__lookupSetter__(i);
         if ( g || s ) {
-            if ( g ) a.__defineGetter__(i, g);
-            if ( s ) a.__defineSetter__(i, s);
-        } else
+            if ( g ) { a.__defineGetter__(i, g); }
+            if ( s ) { a.__defineSetter__(i, s); }
+        } else {
             a[i] = b[i];
+        }
     } return a;
-};
+}
+
 /**
  * @author john resig
  */
@@ -9235,7 +11420,8 @@ function __setArray__( target, array ) {
     // is a super-fast way to populate an object with array-like properties
     target.length = 0;
     Array.prototype.push.apply( target, array );
-};var __defineParser__;
+}
+var __defineParser__;
 (function () {
 var $gwt_version = "1.5.1";
 var $wnd = {};
@@ -9765,7 +11951,7 @@ XMLParser.parseDocument = function(xmlstring, xmldoc, mimetype){
         parent,
         importedNode,
         tmpNode;
-        
+
     if(mimetype && mimetype == 'text/xml'){
         //console.log('mimetype: text/xml');
         tmpdoc.baseURI = 'http://envjs.com/xml';
@@ -9774,25 +11960,21 @@ XMLParser.parseDocument = function(xmlstring, xmldoc, mimetype){
                 +xmlstring+
             '</envjs_1234567890>'+
         '</body></html>';
-        Envjs.parseHtmlDocument(xmlstring, tmpdoc, false, null, null);  
+        Envjs.parseHtmlDocument(xmlstring, tmpdoc, false, null, null);
         parent = tmpdoc.getElementsByTagName('envjs_1234567890')[0];
     }else{
-        Envjs.parseHtmlDocument(xmlstring, tmpdoc, false, null, null);  
+        Envjs.parseHtmlDocument(xmlstring, tmpdoc, false, null, null);
         parent = tmpdoc.documentElement;
     }
-    
+
     while(xmldoc.firstChild != null){
-        tmpNode = xmldoc.removeChild( xmldoc.firstChild );
-        delete tmpNode;
+        xmldoc.removeChild( xmldoc.firstChild );
     }
     while(parent.firstChild != null){
         tmpNode  = parent.removeChild( parent.firstChild );
         importedNode = xmldoc.importNode( tmpNode, true);
         xmldoc.appendChild( importedNode );
-        delete tmpNode;
     }
-    delete tmpdoc,
-           xmlstring;
     return xmldoc;
 };
 
@@ -9802,7 +11984,7 @@ var __fragmentCache__ = {length:0},
 HTMLParser.parseDocument = function(htmlstring, htmldoc){
     //console.log('HTMLParser.parseDocument %s', htmldoc.async);
     htmldoc.parsing = true;
-    Envjs.parseHtmlDocument(htmlstring, htmldoc, htmldoc.async, null, null);  
+    Envjs.parseHtmlDocument(htmlstring, htmldoc, htmldoc.async, null, null);
     //Envjs.wait(-1);
     return htmldoc;
 };
@@ -9823,6 +12005,16 @@ HTMLParser.parseFragment = function(htmlstring, element){
     }else{
         //console.log('parsing html fragment \n%s', htmlstring);
         tmpdoc = new HTMLDocument(new DOMImplementation());
+
+
+        // Need some indicator that this document isn't THE document
+        // to fire off img.src change events and other items.
+        // Otherwise, what happens is the tmpdoc fires and img.src
+        // event, then when it's all imported to the original document
+        // it happens again.
+
+        tmpdoc.fragment = true;
+
         //preserves leading white space
         docstring = '<html><head></head><body>'+
             '<envjs_1234567890 xmlns="envjs_1234567890">'
@@ -9839,31 +12031,28 @@ HTMLParser.parseFragment = function(htmlstring, element){
             tmpdoc.cached = false;
         }
     }
-    
+
     //parent is envjs_1234567890 element
     parent = tmpdoc.body.childNodes[0];
     while(element.firstChild != null){
         //zap the elements children so we can import
-        tmpNode = element.removeChild( element.firstChild );
-        delete tmpNode;
+        element.removeChild( element.firstChild );
     }
+
     if(tmpdoc.cached){
         length = parent.childNodes.length;
         for(i=0;i<length;i++){
             importedNode = element.importNode( parent.childNodes[i], true );
-            element.appendChild( importedNode );  
+            element.appendChild( importedNode );
         }
     }else{
         while(parent.firstChild != null){
             tmpNode  = parent.removeChild( parent.firstChild );
             importedNode = element.importNode( tmpNode, true);
             element.appendChild( importedNode );
-            delete tmpNode;
         }
-        delete tmpdoc;
-        delete htmlstring;
     }
-    
+
     // console.log('finished fragment: %s', element.outerHTML);
     return element;
 };
@@ -9903,34 +12092,51 @@ __extend__(Document.prototype, {
     }
 });
 
-__extend__(HTMLDocument.prototype,{
 
-    open : function(){ 
-        //console.log('opening doc for write.'); 
-        this._open = true;  
-        this._writebuffer = [];
+__extend__(HTMLDocument.prototype, {
+
+    open : function() {
+        //console.log('opening doc for write.');
+        if (! this._writebuffer) {
+            this._writebuffer = [];
+        }
     },
-    close : function(){
-        //console.log('closing doc.'); 
-        if(this._open){
-            HTMLParser.parseDocument(this._writebuffer.join('\n'), this);
-            this._open = false;
+    close : function() {
+        //console.log('closing doc.');
+        if (this._writebuffer) {
+            HTMLParser.parseDocument(this._writebuffer.join(''), this);
             this._writebuffer = null;
             //console.log('finished writing doc.');
         }
     },
-    write: function(htmlstring){ 
-        //console.log('writing doc.'); 
-        if(this._open)
-            this._writebuffer = [htmlstring];
+
+    /**
+     * http://dev.w3.org/html5/spec/Overview.html#document.write
+     */
+    write: function(htmlstring) {
+        //console.log('writing doc.');
+        this.open();
+        this._writebuffer.push(htmlstring);
     },
-    writeln: function(htmlstring){ 
-        if(this.open)
-            this._writebuffer.push(htmlstring); 
+
+    /**
+     * http://dev.w3.org/html5/spec/Overview.html#dom-document-writeln
+     */
+    writeln: function(htmlstring) {
+        this.open();
+        this._writebuffer.push(htmlstring + '\n');
     }
-    
 });
 
+/**
+ * elementPopped is called by the parser in two cases
+ *
+ * - an 'tag' is * complete (all children process and end tag, real or
+ *   implied is * processed)
+ * - a replaceElement happens (this happens by making placeholder
+ *   nodes and then the real one is swapped in.
+ *
+ */
 var __elementPopped__ = function(ns, name, node){
     //console.log('popped html element %s %s %s', ns, name, node);
     var doc = node.ownerDocument,
@@ -9970,7 +12176,42 @@ var __elementPopped__ = function(ns, name, node){
                                     break;
                                 case 'frame':
                                 case 'iframe':
+                                    node.contentWindow = { };
+                                    node.contentDocument = new HTMLDocument(new DOMImplementation(), node.contentWindow);
+                                    node.contentWindow.document = node.contentDocument;
                                     try{
+                                        Window;
+                                    }catch(e){
+                                        node.contentDocument.addEventListener('DOMContentLoaded', function(){
+                                            event = node.contentDocument.createEvent('HTMLEvents');
+                                            event.initEvent("load", false, false);
+                                            node.dispatchEvent( event, false );
+                                        });
+                                    }
+                                    try{
+                                        if (node.src && node.src.length > 0){
+                                            //console.log("getting content document for (i)frame from %s", node.src);
+                                            Envjs.loadFrame(node, Envjs.uri(node.src));
+                                            event = node.contentDocument.createEvent('HTMLEvents');
+                                            event.initEvent("load", false, false);
+                                            node.dispatchEvent( event, false );
+                                        }else{
+                                            //I dont like this being here:
+                                            //TODO: better  mix-in strategy so the try/catch isnt required
+                                            try{
+                                                if(Window){
+                                                    Envjs.loadFrame(node);
+                                                    //console.log('src/html/document.js: triggering frame load');
+                                                    event = node.contentDocument.createEvent('HTMLEvents');
+                                                    event.initEvent("load", false, false);
+                                                    node.dispatchEvent( event, false );
+                                                }
+                                            }catch(e){}
+                                        }
+                                    }catch(e){
+                                        console.log('error loading html element %s %e', node, e.toString());
+                                    }
+                                    /*try{
                                         if (node.src && node.src.length > 0){
                                             //console.log("getting content document for (i)frame from %s", node.src);
                                             Envjs.loadFrame(node, Envjs.uri(node.src));
@@ -9982,22 +12223,19 @@ var __elementPopped__ = function(ns, name, node){
                                         }
                                     }catch(e){
                                         console.log('error loading html element %s %s %s %e', ns, name, node, e.toString());
-                                    }
+                                    }*/
                                     break;
                                 case 'link':
-                                    if (node.href && node.href.length > 0){
-                                        // don't actually load anything, so we're "done" immediately:
-                                        event = doc.createEvent('HTMLEvents');
-                                        event.initEvent("load", false, false);
-                                        node.dispatchEvent( event, false );
+                                    if (node.href) {
+                                        __loadLink__(node, node.href);
                                     }
                                     break;
+                                case 'option':
+                                    node._updateoptions();
+                                    break;
                                 case 'img':
-                                    if (node.src && node.src.length > 0){
-                                        // don't actually load anything, so we're "done" immediately:
-                                        event = doc.createEvent('HTMLEvents');
-                                        event.initEvent("load", false, false);
-                                        node.dispatchEvent( event, false );
+                                    if (node.src){
+                                        __loadImage__(node, node.src);
                                     }
                                     break;
                                 case 'html':
@@ -10022,7 +12260,7 @@ var __elementPopped__ = function(ns, name, node){
                                     }catch(e){
                                         console.log('%s', e);
                                     }
-                                    
+
                                     try{
                                         if(doc.parentWindow){
                                             event = doc.createEvent('HTMLEvents');
@@ -10058,7 +12296,7 @@ var __elementPopped__ = function(ns, name, node){
                             break;
                     }//switch on ns
                     break;
-                default: 
+                default:
                     console.log('element popped: %s %s', ns, name, node.ownerDocument+'');
             }//switch on doc type
         default:
@@ -10078,10 +12316,10 @@ __extend__(HTMLElement.prototype,{
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 /*
- * Envjs xhr.1.2.0.6 
+ * Envjs xhr.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -10096,12 +12334,13 @@ var Location,
     XMLHttpRequest;
 
 /*
- * Envjs xhr.1.2.0.6 
+ * Envjs xhr.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
@@ -10111,17 +12350,19 @@ var Location,
 /**
  * @author john resig
  */
-// Helper method for extending one object with another.  
+// Helper method for extending one object with another.
 function __extend__(a,b) {
     for ( var i in b ) {
         var g = b.__lookupGetter__(i), s = b.__lookupSetter__(i);
         if ( g || s ) {
-            if ( g ) a.__defineGetter__(i, g);
-            if ( s ) a.__defineSetter__(i, s);
-        } else
+            if ( g ) { a.__defineGetter__(i, g); }
+            if ( s ) { a.__defineSetter__(i, s); }
+        } else {
             a[i] = b[i];
+        }
     } return a;
-};
+}
+
 /**
  * @author john resig
  */
@@ -10131,16 +12372,17 @@ function __setArray__( target, array ) {
     // is a super-fast way to populate an object with array-like properties
     target.length = 0;
     Array.prototype.push.apply( target, array );
-};
+}
+
 /**
  * @author ariel flesler
- *    http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html 
+ *    http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
  * @param {Object} str
  */
 function __trim__( str ){
     return (str || "").replace( /^\s+|\s+$/g, "" );
-    
-};
+}
+
 
 /**
  * @todo: document
@@ -10161,8 +12403,9 @@ __extend__(Document.prototype,{
     set location(url){
         //very important or you will go into an infinite
         //loop when creating a xml document
-        if(url)
+        if(url) {
             this.location.replace(url);
+        }
     }
 });
 
@@ -10183,13 +12426,14 @@ HTMLFormElement.prototype.submit = function(){
         if(xhr.readyState === 4){
             __exchangeHTMLDocument__(this.ownerDocument, xhr.responseText, url);
         }
-    }   
-}
+    }
+};
+
 /**
  * Form Submissions
- * 
+ *
  * This code is borrow largely from jquery.params and jquery.form.js
- * 
+ *
  * formToArray() gathers form element data into an array of objects that can
  * be passed to any of the following ajax functions: $.get, $.post, or load.
  * Each object in the array has both a 'name' and 'value' property.  An example of
@@ -10218,27 +12462,29 @@ var __formToArray__ = function(form, semantic) {
         i,j,imax, jmax,
         name,
         value;
-        
-    if (!elements) 
+
+    if (!elements) {
         return array;
-    
+    }
+
     imax = elements.length;
     for(i=0; i < imax; i++) {
         element = elements[i];
         name = element.name;
-        if (!name) 
+        if (!name) {
             continue;
-
-        if (semantic && form.clk && element.type == "image") {
+        }
+        if (semantic && form.clk && element.type === "image") {
             // handle image inputs on the fly when semantic == true
-            if(!element.disabled && form.clk == element)
+            if(!element.disabled && form.clk == element) {
                 array.push({
-                    name: name+'.x', 
+                    name: name+'.x',
                     value: form.clk_x
                 },{
-                    name: name+'.y', 
+                    name: name+'.y',
                     value: form.clk_y
                 });
+            }
             continue;
         }
 
@@ -10260,10 +12506,11 @@ var __formToArray__ = function(form, semantic) {
         for(i=0; i < imax; i++) {
             element = elements[i];
             name = element.name;
-            if(name && !element.disabled && element.type == "image" && form.clk == input)
+            if(name && !element.disabled && element.type == "image" && form.clk == input) {
                 array.push(
-                    {name: name+'.x', value: form.clk_x}, 
+                    {name: name+'.x', value: form.clk_x},
                     {name: name+'.y', value: form.clk_y});
+            }
         }
     }
     return array;
@@ -10309,29 +12556,31 @@ var __fieldSerialize__ = function(inputs, successful) {
         name,
         value,
         i,j, imax, jmax;
-        
+
     imax = inputs.length;
     for(i=0; i<imax; i++){
         input = inputs[i];
         name = input.name;
-        if (!name) 
-            return;
+        if (!name) {
+            return '';
+        }
         value = __fieldValue__(input, successful);
         if (value && value.constructor == Array) {
             jmax = value.length;
-            for (j=0; j < max; j++){
+            for (j=0; j < jmax; j++){
                 array.push({
-                    name: name, 
+                    name: name,
                     value: value[j]
                 });
             }
         }else if (value !== null && typeof value != 'undefined'){
             array.push({
-                name: input.name, 
+                name: input.name,
                 value: value
             });
         }
-    };
+    }
+
     //hand off  for proper encoding
     return __param__(array);
 };
@@ -10351,12 +12600,12 @@ var __fieldSerialize__ = function(inputs, successful) {
  *
  *
  * @name fieldValue
- * @param Boolean successful true if only the values for successful controls 
+ * @param Boolean successful true if only the values for successful controls
  *        should be returned (default is true)
  * @type Array<String>
  */
 var __fieldValues__ = function(inputs, successful) {
-    var i, 
+    var i,
         imax = inputs.length,
         element,
         values = [],
@@ -10364,12 +12613,15 @@ var __fieldValues__ = function(inputs, successful) {
     for (i=0; i < imax; i++) {
         element = inputs[i];
         value = __fieldValue__(element, successful);
-        if (value === null || typeof value == 'undefined' || 
-            (value.constructor == Array && !value.length))
+        if (value === null || typeof value == 'undefined' ||
+            (value.constructor == Array && !value.length)) {
             continue;
-        value.constructor == Array ? 
-            Array.prototype.push(values, value) : 
+        }
+        if (value.constructor == Array) {
+            Array.prototype.push(values, value);
+        } else {
             values.push(value);
+        }
     }
     return values;
 };
@@ -10392,8 +12644,8 @@ var __fieldValues__ = function(inputs, successful) {
  * @type String or Array<String> or null or undefined
  */
 var __fieldValue__ = function(element, successful) {
-    var name = element.name, 
-        type = element.type, 
+    var name = element.name,
+        type = element.type,
         tag = element.tagName.toLowerCase(),
         index,
         array,
@@ -10402,19 +12654,24 @@ var __fieldValue__ = function(element, successful) {
         one,
         i, imax,
         value;
-    if (typeof successful == 'undefined') successful = true;
+
+    if (typeof successful == 'undefined')  {
+        successful = true;
+    }
 
     if (successful && (!name || element.disabled || type == 'reset' || type == 'button' ||
-             (type == 'checkbox' || type == 'radio') &&  !element.checked || 
-             (type == 'submit' || type == 'image') && 
-             element.form && element.form.clk != element || tag == 'select' && 
-             element.selectedIndex == -1))
+             (type == 'checkbox' || type == 'radio') &&  !element.checked ||
+             (type == 'submit' || type == 'image') &&
+             element.form && element.form.clk != element || tag === 'select' &&
+             element.selectedIndex === -1)) {
             return null;
+    }
 
-    if (tag == 'select') {
+    if (tag === 'select') {
         index = element.selectedIndex;
-        if (index < 0) 
+        if (index < 0) {
             return null;
+        }
         array = [];
         options = element.options;
         one = (type == 'select-one');
@@ -10424,8 +12681,9 @@ var __fieldValue__ = function(element, successful) {
             option = options[i];
             if (option.selected) {
                 value = option.value;
-                if (one) 
+                if (one) {
                     return value;
+                }
                 array.push(value);
             }
         }
@@ -10447,11 +12705,11 @@ var __fieldValue__ = function(element, successful) {
  * @name clearForm
  */
 var __clearForm__ = function(form) {
-    var i, 
+    var i,
         j, jmax,
         elements,
         resetable = ['input','select','textarea'];
-    for(i=0; i<resetable.lenth; i++){
+    for(i=0; i<resetable.length; i++){
         elements = form.getElementsByTagName(resetable[i]);
         jmax = elements.length;
         for(j=0;j<jmax;j++){
@@ -10471,256 +12729,320 @@ var __clearForm__ = function(form) {
  * @name clearFields
  */
 var __clearField__ = function(element) {
-    var type = element.type, 
+    var type = element.type,
         tag = element.tagName.toLowerCase();
-    if (type == 'text' || type == 'password' || tag == 'textarea')
+    if (type == 'text' || type == 'password' || tag === 'textarea') {
         element.value = '';
-    else if (type == 'checkbox' || type == 'radio')
+    } else if (type == 'checkbox' || type == 'radio') {
         element.checked = false;
-    else if (tag == 'select')
+    } else if (tag === 'select') {
         element.selectedIndex = -1;
+    }
 };
 
 
 // Serialize an array of key/values into a query string
 var __param__= function( array ) {
-    var serialized = [];
+    var i, serialized = [];
 
     // Serialize the key/values
     for(i=0; i<array.length; i++){
-        serialized[ serialized.length ] = 
-            encodeURIComponent(array[i].name) + '=' + 
+        serialized[ serialized.length ] =
+            encodeURIComponent(array[i].name) + '=' +
             encodeURIComponent(array[i].value);
     }
 
     // Return the resulting serialization
     return serialized.join("&").replace(/%20/g, "+");
 };
- 
-/**
- * @todo: document
- */
-var HASH     = new RegExp('(\\#.*)'),
-    HOSTNAME = new RegExp('\/\/([^\:\/]+)'),
-    PATHNAME = new RegExp('(\/[^\\?\\#]*)'),
-    PORT     = new RegExp('\:(\\d+)\/'),
-    PROTOCOL = new RegExp('(^\\w*\:)'),
-    SEARCH   = new RegExp('(\\?[^\\#]*)');
-        
 
-Location = function(url, doc, history){
+/**
+ * Location
+ *
+ * Mozilla MDC:
+ * https://developer.mozilla.org/En/DOM/Window.location
+ * https://developer.mozilla.org/en/DOM/document.location
+ *
+ * HTML5: 6.10.4 The Location interface
+ * http://dev.w3.org/html5/spec/Overview.html#location
+ *
+ * HTML5: 2.5.3 Interfaces for URL manipulation
+ * http://dev.w3.org/html5/spec/Overview.html#url-decomposition-idl-attributes
+ * All of section 2.5 is worth reading, but 2.5.3 contains very
+ * detailed information on how getters/setter should work
+ *
+ * NOT IMPLEMENTED:
+ *  HTML5: Section 6.10.4.1 Security -- prevents scripts from another domain
+ *   from accessing most of the 'Location'
+ *  Not sure if anyone implements this in HTML4
+ */
+
+Location = function(url, doc, history) {
     //console.log('Location url %s', url);
-    var $url = url
-        $document = doc?doc:null,
-        $history = history?history:null;
-    
+    var $url = url,
+    $document = doc ? doc : null,
+    $history = history ? history : null;
+
+    var parts = Envjs.urlsplit($url);
+
     return {
-        get hash(){
-            var m = HASH.exec($url);
-            return m&&m.length>1?m[1]:"";
+        get hash() {
+            return parts.fragment ? '#' + parts.fragment : parts.fragment;
         },
-        set hash(hash){
-            $url = this.protocol + this.host + this.pathname + 
-                this.search + (hash.indexOf('#')===0?hash:"#"+hash);
-            if($history){
-                $history.add( $url, 'hash');
+        set hash(s) {
+            if (s[0] === '#') {
+                parts.fragment = s.substr(1);
+            } else {
+                parts.fragment = s;
+            }
+            $url = Envjs.urlunsplit(parts);
+            if ($history) {
+                $history.add($url, 'hash');
             }
         },
-        get host(){
-            return this.hostname + (this.port !== ""?":"+this.port:"");
+
+        get host() {
+            return parts.netloc;
         },
-        set host(host){
-            $url = this.protocol + host + this.pathname + 
-                this.search + this.hash;
-            if($history){
+        set host(s) {
+            if (!s || s === '') {
+                return;
+            }
+
+            parts.netloc = s;
+            $url = Envjs.urlunsplit(parts);
+
+            // this regenerates hostname & port
+            parts = Envjs.urlsplit($url);
+
+            if ($history) {
                 $history.add( $url, 'host');
             }
             this.assign($url);
         },
-        get hostname(){
-            var m = HOSTNAME.exec(this.href);
-            return m&&m.length>1?m[1]:"";
+
+        get hostname() {
+            return parts.hostname;
         },
-        set hostname(hostname){
-            $url = this.protocol + hostname + ((this.port==="")?"":(":"+this.port)) +
-                 this.pathname + this.search + this.hash;
-            if($history){
+        set hostname(s) {
+            if (!s || s === '') {
+                return;
+            }
+
+            parts.netloc = s;
+            if (parts.port != '') {
+                parts.netloc += ':' + parts.port;
+            }
+            parts.hostname = s;
+            $url = Envjs.urlunsplit(parts);
+            if ($history) {
                 $history.add( $url, 'hostname');
             }
             this.assign($url);
         },
-        get href(){
+
+        get href() {
             return $url;
         },
-        set href(url){
-            $url = url;  
-            if($history){
-                $history.add( $url, 'href');
+        set href(url) {
+            $url = url;
+            if ($history) {
+                $history.add($url, 'href');
             }
             this.assign($url);
         },
-        get pathname(){
-            var m = this.href;
-            m = PATHNAME.exec(m.substring(m.indexOf(this.hostname)));
-            return m&&m.length>1?m[1]:"/";
+
+        get pathname() {
+            return parts.path;
         },
-        set pathname(pathname){
-            $url = this.protocol + this.host + pathname + 
-                this.search + this.hash;
-            if($history){
-                $history.add( $url, 'pathname');
+        set pathname(s) {
+            if (s[0] === '/') {
+                parts.path = s;
+            } else {
+                parts.path = '/' + s;
+            }
+            $url = Envjs.urlunsplit(parts);
+
+            if ($history) {
+                $history.add($url, 'pathname');
             }
             this.assign($url);
         },
-        get port(){
-            var m = PORT.exec(this.href);
-            return m&&m.length>1?m[1]:"";
+
+        get port() {
+            // make sure it's a string
+            return '' + parts.port;
         },
-        set port(port){
-            $url = this.protocol + this.hostname + ":"+port + this.pathname + 
-                this.search + this.hash;
-            if($history){
+        set port(p) {
+            // make a string
+            var s = '' + p;
+            parts.port = s;
+            parts.netloc = parts.hostname + ':' + parts.port;
+            $url = Envjs.urlunsplit(parts);
+            if ($history) {
                 $history.add( $url, 'port');
             }
             this.assign($url);
         },
-        get protocol(){
-            return this.href && PROTOCOL.exec(this.href)[0];
+
+        get protocol() {
+            return parts.scheme + ':';
         },
-        set protocol(protocol){
-            $url = protocol + this.host + this.pathname + 
-                this.search + this.hash;
-            if($history){
-                $history.add( $url, 'protocol');
+        set protocol(s) {
+            var i = s.indexOf(':');
+            if (i != -1) {
+                s = s.substr(0,i);
+            }
+            parts.scheme = s;
+            $url = Envjs.urlunsplit(parts);
+            if ($history) {
+                $history.add($url, 'protocol');
             }
             this.assign($url);
         },
-        get search(){
-            var m = SEARCH.exec(this.href);
-            return m&&m.length>1?m[1]:"";
+
+        get search() {
+            return (parts.query) ? '?' + parts.query : parts.query;
         },
-        set search(search){
-            $url = this.protocol + this.host + this.pathname + 
-                search + this.hash;
-            if($history){
-                $history.add( $url, 'search');
+        set search(s) {
+            if (s[0] == '?') {
+                s = s.substr(1);
+            }
+            parts.query = s;
+            $url = Envjs.urlunsplit(parts);
+            if ($history) {
+                $history.add($url, 'search');
             }
             this.assign($url);
         },
-        toString: function(){
+
+        toString: function() {
             return $url;
         },
-        assign: function(url){
+
+        assign: function(url) {
             var _this = this,
-                xhr;
-            
+                xhr,
+                event,
+                cookie;
+
             //console.log('assigning %s',url);
+
+            // update closure upvars
             $url = url;
+            parts = Envjs.urlsplit($url);
+
             //we can only assign if this Location is associated with a document
-            if($document){
-                //console.log("fetching %s (async? %s)", url, $document.async);
+            if ($document) {
+                //console.log('fetching %s (async? %s)', url, $document.async);
                 xhr = new XMLHttpRequest();
-                xhr.open("GET", url, false);//$document.async);
-                
-                if($document.toString()=="[object HTMLDocument]"){
+
+                // TODO: make async flag a Envjs paramter
+                xhr.open('GET', url, false);//$document.async);
+
+                // TODO: is there a better way to test if a node is an HTMLDocument?
+                if ($document.toString() === '[object HTMLDocument]') {
                     //tell the xhr to not parse the document as XML
-                    //console.log("loading html document");
-                    xhr.onreadystatechange = function(){
-                        //console.log("readyState %s", xhr.readyState);
-                        if(xhr.readyState === 4){
+                    //console.log('loading html document');
+                    xhr.onreadystatechange = function() {
+                        //console.log('readyState %s', xhr.readyState);
+                        if (xhr.readyState === 4) {
                             $document.baseURI = new Location(url, $document);
                             //console.log('new document baseURI %s', $document.baseURI);
                             __exchangeHTMLDocument__($document, xhr.responseText, url);
-                        }    
+                        }
                     };
                     xhr.send(null, false);
-                }else{
+                } else {
                     //Treat as an XMLDocument
-                    xhr.onreadystatechange = function(){
-                        if(xhr.readyState === 4){
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
                             $document = xhr.responseXML;
                             $document.baseURI = $url;
-                            if($document.createEvent){
-                                event = $document.createEvent('Events');
-                                event.initEvent("DOMContentLoaded");
+                            if ($document.createEvent) {
+                                event = $document.createEvent('Event');
+                                event.initEvent('DOMContentLoaded');
                                 $document.dispatchEvent( event, false );
                             }
                         }
                     };
                     xhr.send();
                 }
-                
+
             };
-            
+
         },
-        reload: function(forceget){
+        reload: function(forceget) {
             //for now we have no caching so just proxy to assign
             //console.log('reloading %s',$url);
             this.assign($url);
         },
-        replace: function(url){
+        replace: function(url) {
             this.assign(url);
         }
-    }
+    };
 };
 
-var __exchangeHTMLDocument__ = function(doc, text, url){
-    var html, head, title, body, event;
-    try{
+var __exchangeHTMLDocument__ = function(doc, text, url) {
+    var html, head, title, body, event, e;
+    try {
         doc.baseURI = url;
         HTMLParser.parseDocument(text, doc);
         Envjs.wait();
-    }catch(e){
+    } catch (e) {
         console.log('parsererror %s', e);
-        try{
+        try {
             console.log('document \n %s', doc.documentElement.outerHTML);
-        }catch(ee){}
+        } catch (e) {
+            // swallow
+        }
         doc = new HTMLDocument(new DOMImplementation(), doc.ownerWindow);
         html =    doc.createElement('html');
         head =    doc.createElement('head');
         title =   doc.createElement('title');
         body =    doc.createElement('body');
-        title.appendChild(doc.createTextNode("Error"));
-        body.appendChild(doc.createTextNode(e+''));
+        title.appendChild(doc.createTextNode('Error'));
+        body.appendChild(doc.createTextNode('' + e));
         head.appendChild(title);
         html.appendChild(head);
         html.appendChild(body);
         doc.appendChild(html);
         //console.log('default error document \n %s', doc.documentElement.outerHTML);
-        
+
         //DOMContentLoaded event
-        if(doc.createEvent){
-            event = doc.createEvent('Events');
-            event.initEvent("DOMContentLoaded", false, false);
+        if (doc.createEvent) {
+            event = doc.createEvent('Event');
+            event.initEvent('DOMContentLoaded', false, false);
             doc.dispatchEvent( event, false );
-            
+
             event = doc.createEvent('HTMLEvents');
-            event.initEvent("load", false, false);
+            event.initEvent('load', false, false);
             doc.dispatchEvent( event, false );
         }
-        
+
         //finally fire the window.onload event
         //TODO: this belongs in window.js which is a event
         //      event handler for DOMContentLoaded on document
-        
-        try{
-            if(doc === window.document){
-                console.log('triggering window.load')
+
+        try {
+            if (doc === window.document) {
+                console.log('triggering window.load');
                 event = doc.createEvent('HTMLEvents');
-                event.initEvent("load", false, false);
+                event.initEvent('load', false, false);
                 window.dispatchEvent( event, false );
             }
-        }catch(e){
+        } catch (e) {
             //console.log('window load event failed %s', e);
             //swallow
         }
-    }
+    };  /* closes return {... */
 };
+
 /**
- * 
+ *
  * @class XMLHttpRequest
  * @author Originally implemented by Yehuda Katz
- * 
+ *
  */
 
 // this implementation can be used without requiring a DOMParser
@@ -10728,12 +13050,13 @@ var __exchangeHTMLDocument__ = function(doc, text, url){
 var domparser;
 
 XMLHttpRequest = function(){
-	this.headers = {};
-	this.responseHeaders = {};
+    this.headers = {};
+    this.responseHeaders = {};
     this.aborted = false;//non-standard
 };
 
 // defined by the standard: http://www.w3.org/TR/XMLHttpRequest/#xmlhttprequest
+// but not provided by Firefox.  Safari and others do define it.
 XMLHttpRequest.UNSENT = 0;
 XMLHttpRequest.OPEN = 1;
 XMLHttpRequest.HEADERS_RECEIVED = 2;
@@ -10741,26 +13064,31 @@ XMLHttpRequest.LOADING = 3;
 XMLHttpRequest.DONE = 4;
 
 XMLHttpRequest.prototype = {
-	open: function(method, url, async, user, password){ 
+    open: function(method, url, async, user, password){
         //console.log('openning xhr %s %s %s', method, url, async);
-		this.readyState = 1;
-		this.async = (async === false)?false:true;
-		this.method = method || "GET";
-		this.url = Envjs.uri(url);
-		this.onreadystatechange();
-	},
-	setRequestHeader: function(header, value){
-		this.headers[header] = value;
-	},
-	send: function(data, parsedoc/*non-standard*/){
-		var _this = this;
+        this.readyState = 1;
+        this.async = (async === false)?false:true;
+        this.method = method || "GET";
+        this.url = Envjs.uri(url);
+        this.onreadystatechange();
+    },
+    setRequestHeader: function(header, value){
+        this.headers[header] = value;
+    },
+    send: function(data, parsedoc/*non-standard*/){
+        var _this = this;
         parsedoc = (parsedoc === undefined)?true:!!parsedoc;
-		function makeRequest(){
+        function makeRequest(){
+            var cookie = Envjs.getCookies(_this.url);
+            if(cookie){
+                _this.setRequestHeader('COOKIE', cookie);
+            }
             Envjs.connection(_this, function(){
                 if (!_this.aborted){
                     var doc = null,
-                        domparser;
-                    // try to parse the document if we havent explicitly set a 
+                        domparser,
+                        cookie;
+                    // try to parse the document if we havent explicitly set a
                     // flag saying not to and if we can assure the text at least
                     // starts with valid xml
                     if ( parsedoc && _this.responseText.match(/^\s*</) ) {
@@ -10773,72 +13101,83 @@ XMLHttpRequest.prototype = {
                             console.warn('parseerror \n%s', e);
                             doc = document.implementation.createDocument('','error',null);
                             doc.appendChild(doc.createTextNode(e+''));
-                        } 
+                        }
                     }else{
                         //Envjs.warn('response XML does not appear to be xml');
+                    }
+                    
+                    try{
+                        cookie = _this.getResponseHeader('SET-COOKIE');
+                        if(cookie){
+                             Envjs.setCookie(_this.url, cookie);
+                        }
+                    }catch(e){
+                        console.warn("Failed to set cookie");
                     }
                     _this.__defineGetter__("responseXML", function(){
                         return doc;
                     });
                 }
-			}, data);
+            }, data);
 
             if (!_this.aborted){
                 _this.onreadystatechange();
             }
-		};
+        }
 
-		if (this.async){
-            //TODO: what we really need to do here is rejoin the 
+        if (this.async){
+            //TODO: what we really need to do here is rejoin the
             //      current thread and call onreadystatechange via
             //      setTimeout so the callback is essentially applied
             //      at the end of the current callstack
             //console.log('requesting async: %s', this.url);
-			Envjs.runAsync(makeRequest);
-		}else{
+            Envjs.runAsync(makeRequest);
+        }else{
             //console.log('requesting sync: %s', this.url);
-			makeRequest();
-		}
-	},
-	abort: function(){
+            makeRequest();
+        }
+    },
+    abort: function(){
         this.aborted = true;
-	},
-	onreadystatechange: function(){
-		//Instance specific
-	},
-	getResponseHeader: function(header){
-      //$debug('GETTING RESPONSE HEADER '+header);
-	  var rHeader, returnedHeaders;
-		if (this.readyState < 3){
-			throw new Error("INVALID_STATE_ERR");
-		} else {
-			returnedHeaders = [];
-			for (rHeader in this.responseHeaders) {
-				if (rHeader.match(new RegExp(header, "i")))
-					returnedHeaders.push(this.responseHeaders[rHeader]);
-			}
-            
-			if (returnedHeaders.length){ 
-                //$debug('GOT RESPONSE HEADER '+returnedHeaders.join(", "));
-                return returnedHeaders.join(", "); 
+    },
+    onreadystatechange: function(){
+        //Instance specific
+    },
+    getResponseHeader: function(header){
+        //$debug('GETTING RESPONSE HEADER '+header);
+        var rHeader, returnedHeaders;
+        if (this.readyState < 3){
+            throw new Error("INVALID_STATE_ERR");
+        } else {
+            returnedHeaders = [];
+            for (rHeader in this.responseHeaders) {
+                if (rHeader.match(new RegExp(header, "i"))) {
+                    returnedHeaders.push(this.responseHeaders[rHeader]);
+                }
             }
-		}
+
+            if (returnedHeaders.length){
+                //$debug('GOT RESPONSE HEADER '+returnedHeaders.join(", "));
+                return returnedHeaders.join(", ");
+            }
+        }
         return null;
-	},
-	getAllResponseHeaders: function(){
-	  var header, returnedHeaders = [];
-		if (this.readyState < 3){
-			throw new Error("INVALID_STATE_ERR");
-		} else {
-			for (header in this.responseHeaders){
-				returnedHeaders.push( header + ": " + this.responseHeaders[header] );
-			}
-		}return returnedHeaders.join("\r\n");
-	},
-	async: true,
-	readyState: 0,
-	responseText: "",
-	status: 0,
+    },
+    getAllResponseHeaders: function(){
+        var header, returnedHeaders = [];
+        if (this.readyState < 3){
+            throw new Error("INVALID_STATE_ERR");
+        } else {
+            for (header in this.responseHeaders) {
+                returnedHeaders.push( header + ": " + this.responseHeaders[header] );
+            }
+        }
+        return returnedHeaders.join("\r\n");
+    },
+    async: true,
+    readyState: 0,
+    responseText: "",
+    status: 0,
     statusText: ""
 };
 
@@ -10848,8 +13187,8 @@ XMLHttpRequest.prototype = {
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
 
 /**
  * @todo: document
@@ -10861,12 +13200,13 @@ var Window,
 
 
 /*
- * Envjs window.1.2.0.6 
+ * Envjs window.1.2.13 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
  */
 
+//CLOSURE_START
 (function(){
 
 
@@ -10876,17 +13216,19 @@ var Window,
 /**
  * @author john resig
  */
-// Helper method for extending one object with another.  
+// Helper method for extending one object with another.
 function __extend__(a,b) {
     for ( var i in b ) {
         var g = b.__lookupGetter__(i), s = b.__lookupSetter__(i);
         if ( g || s ) {
-            if ( g ) a.__defineGetter__(i, g);
-            if ( s ) a.__defineSetter__(i, s);
-        } else
+            if ( g ) { a.__defineGetter__(i, g); }
+            if ( s ) { a.__defineSetter__(i, s); }
+        } else {
             a[i] = b[i];
+        }
     } return a;
-};
+}
+
 /**
  * @todo: document
  */
@@ -10904,132 +13246,139 @@ __extend__(HTMLFrameElement.prototype,{
         if (this.parentNode && value && value.length > 0){
             //console.log('loading frame %s', value);
             Envjs.loadFrame(this, Envjs.uri(value));
-            
+
             //console.log('event frame load %s', value);
             event = this.ownerDocument.createEvent('HTMLEvents');
             event.initEvent("load", false, false);
             this.dispatchEvent( event, false );
         }
     }
-    
+
 });
 
 /*
-*	history.js
-*
-*/
+ *       history.js
+ *
+ */
 
-History = function(owner){
-	var $current = 0,
+History = function(owner) {
+    var $current = 0,
         $history = [null],
         $owner = owner;
-	
+
     return {
-		get length(){ 
+        go : function(target) {
+            if (typeof target === "number") {
+                target = $current + target;
+                if (target > -1 && target < $history.length){
+                    if ($history[target].type === "hash") {
+                        if ($owner.location) {
+                            $owner.location.hash = $history[target].value;
+                        }
+                    } else {
+                        if ($owner.location) {
+                            $owner.location = $history[target].value;
+                        }
+                    }
+                    $current = target;
+                }
+            } else {
+                //TODO: walk through the history and find the 'best match'?
+            }
+        },
+
+        get length() {
             return $history.length;
         },
-		back : function(count){
-			if(count){
-				go(-count);
-			}else{
-                go(-1);
+
+        back : function(count) {
+            if (count) {
+                this.go(-count);
+            } else {
+                this.go(-1);
             }
-		},
-        get current(){
+        },
+
+        get current() {
             return this.item($current);
         },
-        get previous(){
+
+        get previous() {
             return this.item($current-1);
         },
-		forward : function(count){
-			if(count){
-				go(count);
-			}else{go(1);}
-		},
-		go : function(target){
-			if(typeof target == "number"){
-				target = $current + target;
-				if(target > -1 && target < $history.length){
-					if($history[target].type == "hash"){
-                        if($owner.location){
-						    $owner.location.hash = $history[target].value;
-                        }
-					}else{
-                        if($owner.location){
-						    $owner.location = $history[target].value;
-                        }
-					}
-					$current = target;
-				}
-			}else{
-				//TODO: walk through the history and find the 'best match'?
-			}
-		},
-        item: function(index){
-            if(index < history.length)
-                return $history[index];
-            else
-                return null;
+
+        forward : function(count) {
+            if (count) {
+                this.go(count);
+            } else {
+                this.go(1);
+            }
         },
-        
-        add: function(newLocation, type){
-            //not a standard interface, we expose it to simplify 
+
+        item: function(idx) {
+            if (idx >= 0 && idx < $history.length) {
+                return $history[idx];
+            } else {
+                return null;
+            }
+        },
+
+        add: function(newLocation, type) {
+            //not a standard interface, we expose it to simplify
             //history state modifications
-            if(newLocation !== $history[$current]){
+            if (newLocation !== $history[$current]) {
                 $history.slice(0, $current);
                 $history.push({
-                    type: type||"href",
-                    value: value
+                    type: type || 'href',
+                    value: newLocation
                 });
             }
         }
-	};
+    }; /* closes 'return {' */
 };
 
 
-	
-
 /*
- *	navigator.js
- *  Browser Navigator    
+ *      navigator.js
+ *  Browser Navigator
  */
 Navigator = function(){
 
-	return {
-		get appCodeName(){
-			return Envjs.appCodeName;
-		},
-		get appName(){
-			return Envjs.appName;
-		},
-		get appVersion(){
-			return Envjs.version +" ("+ 
-			    this.platform +"; "+
-			    "U; "+//?
-			    Envjs.os_name+" "+Envjs.os_arch+" "+Envjs.os_version+"; "+
-			    (Envjs.lang?Envjs.lang:"en-US")+"; "+
-			    "rv:"+Envjs.revision+
-			  ")";
-		},
-		get cookieEnabled(){
-			return true;
-		},
-		get mimeTypes(){
-			return [];
-		},
-		get platform(){
-			return Envjs.platform;
-		},
-		get plugins(){
-			return [];
-		},
-		get userAgent(){
-			return this.appCodeName + "/" + this.appVersion + " " + this.appName;
-		},
-		javaEnabled : function(){
-			return Envjs.javaEnabled;	
-		}
-	};
+    return {
+        get appCodeName(){
+            return Envjs.appCodeName;
+        },
+        get appName(){
+            return Envjs.appName;
+        },
+        get appVersion(){
+            return Envjs.version +" ("+
+                this.platform +"; "+
+                "U; "+//?
+                Envjs.os_name+" "+Envjs.os_arch+" "+Envjs.os_version+"; "+
+                (Envjs.lang?Envjs.lang:"en-US")+"; "+
+                "rv:"+Envjs.revision+
+                ")";
+        },
+        get cookieEnabled(){
+            return true;
+        },
+        get mimeTypes(){
+            return [];
+        },
+        get platform(){
+            return Envjs.platform;
+        },
+        get plugins(){
+            return [];
+        },
+        get userAgent(){
+            return this.appCodeName + "/" + this.appVersion + " " + this.appName;
+        },
+        javaEnabled : function(){
+            return Envjs.javaEnabled;
+        }
+    };
 };
 
 
@@ -11045,12 +13394,12 @@ Screen = function(__window__){
         $colorDepth   = 16,
         $pixelDepth   = 24,
         $height       = 600,
-        $width        = 800;
-        $top          = 0;
-        $left         = 0;
-        $availTop     = 0;
+        $width        = 800,
+        $top          = 0,
+        $left         = 0,
+        $availTop     = 0,
         $availLeft    = 0;
-        
+
     __extend__( __window__, {
         moveBy : function(dx,dy){
             //TODO - modify $locals to reflect change
@@ -11077,8 +13426,8 @@ Screen = function(__window__){
         scrollTo : function(x,y){
             //TODO - modify $locals to reflect change
         }
-    });   
-    
+    });
+
     return {
         get top(){
             return $top;
@@ -11090,7 +13439,7 @@ Screen = function(__window__){
             return $availTop;
         },
         get availLeft(){
-            return $availleft;
+            return $availLeft;
         },
         get availHeight(){
             return $availHeight;
@@ -11137,7 +13486,7 @@ Screen = function(__window__){
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
-*/
+ */
 
 /* base64 encode/decode compatible with window.btoa/atob
  *
@@ -11167,49 +13516,54 @@ base64.ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
 base64.makeDOMException = function() {
     // sadly in FF,Safari,Chrome you can't make a DOMException
     var e, tmp;
+
     try {
-	e = new DOMException(DOMException.INVALID_CHARACTER_ERR);
+        return new DOMException(DOMException.INVALID_CHARACTER_ERR);
     } catch (tmp) {
-	// not available, just passback a duck-typed equiv
-	//  Firefox 3.6 has a much more complicated Error object
-	//   but this should suffice
-	e = {
-	    code: 5,
-	    toString: function() { return "Error: INVALID_CHARACTER_ERR: DOM Exception 5"; }
-	};
+        // not available, just passback a duck-typed equiv
+        // https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Global_Objects/Error
+        // https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Global_Objects/Error/prototype
+        var ex = new Error("DOM Exception 5");
+
+        // ex.number and ex.description is IE-specific.
+        ex.code = ex.number = 5;
+        ex.name = ex.description = "INVALID_CHARACTER_ERR";
+
+        // Safari/Chrome output format
+        ex.toString = function() { return 'Error: ' + ex.name + ': ' + ex.message; };
+        return ex;
     }
-    return e;
-}
+};
 
 base64.getbyte64 = function(s,i) {
     // This is oddly fast, except on Chrome/V8.
     //  Minimal or no improvement in performance by using a
     //   object with properties mapping chars to value (eg. 'A': 0)
     var idx = base64.ALPHA.indexOf(s.charAt(i));
-    if (idx == -1) {
-	throw base64.makeDOMException();
+    if (idx === -1) {
+        throw base64.makeDOMException();
     }
     return idx;
-}
+};
 
 base64.decode = function(s) {
     // convert to string
-    s = "" + s;
+    s = '' + s;
     var getbyte64 = base64.getbyte64;
     var pads, i, b10;
-    var imax = s.length
-    if (imax == 0) {
+    var imax = s.length;
+    if (imax === 0) {
         return s;
     }
 
-    if (imax % 4 != 0) {
-	throw base64.makeDOMException();
+    if (imax % 4 !== 0) {
+        throw base64.makeDOMException();
     }
 
-    pads = 0
-    if (s.charAt(imax -1) == base64.PADCHAR) {
+    pads = 0;
+    if (s.charAt(imax - 1) === base64.PADCHAR) {
         pads = 1;
-        if (s.charAt(imax -2) == base64.PADCHAR) {
+        if (s.charAt(imax - 2) === base64.PADCHAR) {
             pads = 2;
         }
         // either way, we want to ignore this last block
@@ -11225,7 +13579,7 @@ base64.decode = function(s) {
 
     switch (pads) {
     case 1:
-        b10 = (getbyte64(s,i) << 18) | (getbyte64(s,i+1) << 12) | (getbyte64(s,i+2) << 6)
+        b10 = (getbyte64(s,i) << 18) | (getbyte64(s,i+1) << 12) | (getbyte64(s,i+2) << 6);
         x.push(String.fromCharCode(b10 >> 16, (b10 >> 8) & 0xff));
         break;
     case 2:
@@ -11234,7 +13588,7 @@ base64.decode = function(s) {
         break;
     }
     return x.join('');
-}
+};
 
 base64.getbyte = function(s,i) {
     var x = s.charCodeAt(i);
@@ -11242,11 +13596,11 @@ base64.getbyte = function(s,i) {
         throw base64.makeDOMException();
     }
     return x;
-}
+};
 
 base64.encode = function(s) {
-    if (arguments.length != 1) {
-	throw new SyntaxError("Not enough arguments");
+    if (arguments.length !== 1) {
+        throw new SyntaxError("Not enough arguments");
     }
     var padchar = base64.PADCHAR;
     var alpha   = base64.ALPHA;
@@ -11256,11 +13610,11 @@ base64.encode = function(s) {
     var x = [];
 
     // convert to string
-    s = "" + s;
+    s = '' + s;
 
     var imax = s.length - s.length % 3;
 
-    if (s.length == 0) {
+    if (s.length === 0) {
         return s;
     }
     for (i = 0; i < imax; i += 3) {
@@ -11283,9 +13637,23 @@ base64.encode = function(s) {
         break;
     }
     return x.join('');
-}
+};
 //These descriptions of window properties are taken loosely David Flanagan's
 //'JavaScript - The Definitive Guide' (O'Reilly)
+
+var __windows__ = {};
+
+var __top__ = function(_scope){
+    var _parent = _scope.parent;
+    while (_scope && _parent && _scope !== _parent) {
+        if (_parent === _parent.parent) {
+            break;
+        }
+        _parent = _parent.parent;
+        //console.log('scope %s _parent %s', scope, _parent);
+    }
+    return _parent || null;
+};
 
 /**
  * Window
@@ -11294,18 +13662,18 @@ base64.encode = function(s) {
  * @param {Object} opener
  */
 Window = function(scope, parent, opener){
-    
+
     // the window property is identical to the self property and to this obj
     //var proxy = new Envjs.proxy(scope, parent);
     //scope.__proxy__ = proxy;
     scope.__defineGetter__('window', function(){
         return scope;
     });
-    
-    var $uuid = new Date().getTime()+'-'+Math.floor(Math.random()*1000000000000000); 
+
+    var $uuid = new Date().getTime()+'-'+Math.floor(Math.random()*1000000000000000);
     __windows__[$uuid] = scope;
     //console.log('opening window %s', $uuid);
-    
+
     // every window has one-and-only-one .document property which is always
     // an [object HTMLDocument].  also, only window.document objects are
     // html documents, all other documents created by the window.document are
@@ -11313,78 +13681,78 @@ Window = function(scope, parent, opener){
     var $htmlImplementation =  new DOMImplementation();
     $htmlImplementation.namespaceAware = true;
     $htmlImplementation.errorChecking = false;
-    
+
     // read only reference to the Document object
     var $document = new HTMLDocument($htmlImplementation, scope);
-    
+
     // A read-only reference to the Window object that contains this window
     // or frame.  If the window is a top-level window, parent refers to
     // the window itself.  If this window is a frame, this property refers
     // to the window or frame that contains it.
     var $parent = parent;
-    
+
     /**> $cookies - see cookie.js <*/
     // read only boolean specifies whether the window has been closed
     var $closed = false;
-    
-    // a read/write string that specifies the default message that 
-    // appears in the status line 
+
+    // a read/write string that specifies the default message that
+    // appears in the status line
     var $defaultStatus = "Done";
-    
-    // IE only, refers to the most recent event object - this maybe be 
+
+    // IE only, refers to the most recent event object - this maybe be
     // removed after review
     var $event = null;
-    
+
     // a read-only reference to the History object
     var $history = new History();
-    
-    // a read-only reference to the Location object.  the location object does 
+
+    // a read-only reference to the Location object.  the location object does
     // expose read/write properties
     var $location = new Location('about:blank', $document, $history);
-    
+
     // The name of window/frame. Set directly, when using open(), or in frameset.
     // May be used when specifying the target attribute of links
     var $name = null;
-    
+
     // a read-only reference to the Navigator object
     var $navigator = new Navigator();
-    
-    // a read/write reference to the Window object that contained the script 
-    // that called open() to open this browser window.  This property is valid 
+
+    // a read/write reference to the Window object that contained the script
+    // that called open() to open this browser window.  This property is valid
     // only for top-level window objects.
     var $opener = opener?opener:null;
-    
+
     // read-only properties that specify the height and width, in pixels
     var $innerHeight = 600, $innerWidth = 800;
-    
-    // Read-only properties that specify the total height and width, in pixels, 
-    // of the browser window. These dimensions include the height and width of 
-    // the menu bar, toolbars, scrollbars, window borders and so on.  These 
-    // properties are not supported by IE and IE offers no alternative 
+
+    // Read-only properties that specify the total height and width, in pixels,
+    // of the browser window. These dimensions include the height and width of
+    // the menu bar, toolbars, scrollbars, window borders and so on.  These
+    // properties are not supported by IE and IE offers no alternative
     // properties;
-    var $outerHeight = $innerHeight, 
+    var $outerHeight = $innerHeight,
         $outerWidth = $innerWidth;
-    
-    // Read-only properties that specify the number of pixels that the current 
-    // document has been scrolled to the right and down.  These are not 
+
+    // Read-only properties that specify the number of pixels that the current
+    // document has been scrolled to the right and down.  These are not
     // supported by IE.
     var $pageXOffset = 0, $pageYOffset = 0;
-    
-    // a read-only reference to the Screen object that specifies information  
-    // about the screen: the number of available pixels and the number of 
+
+    // a read-only reference to the Screen object that specifies information
+    // about the screen: the number of available pixels and the number of
     // available colors.
     var $screen = new Screen(scope);
-   
-    // read only properties that specify the coordinates of the upper-left 
+
+    // read only properties that specify the coordinates of the upper-left
     // corner of the screen.
-    var $screenX = 1, 
+    var $screenX = 1,
         $screenY = 1;
-    var $screenLeft = $screenX, 
+    var $screenLeft = $screenX,
         $screenTop = $screenY;
-    
+
     // a read/write string that specifies the current status line.
     var $status = '';
-    
+
     __extend__(scope, EventTarget.prototype);
 
     return __extend__( scope, {
@@ -11397,10 +13765,10 @@ Window = function(scope, parent, opener){
         set defaultStatus(defaultStatus){
             $defaultStatus = defaultStatus;
         },
-        get document(){ 
+        get document(){
             return $document;
         },
-        set document(doc){ 
+        set document(doc){
             $document = doc;
         },
         /*
@@ -11448,12 +13816,12 @@ Window = function(scope, parent, opener){
         get name(){
             return $name;
         },
-        set name(newName){ 
-            $name = newName; 
+        set name(newName){
+            $name = newName;
         },
         get navigator(){
             return $navigator;
-        }, 
+        },
         get opener(){
             return $opener;
         },
@@ -11497,11 +13865,11 @@ Window = function(scope, parent, opener){
             $status = status;
         },
         // a read-only reference to the top-level window that contains this window.
-        // If this window is a top-level window it is simply a reference to itself.  
-        // If this window is a frame, the top property refers to the top-level 
+        // If this window is a top-level window it is simply a reference to itself.
+        // If this window is a frame, the top property refers to the top-level
         // window that contains the frame.
         get top(){
-            return __top__(scope)
+            return __top__(scope);
         },
         get window(){
             return this;
@@ -11509,26 +13877,47 @@ Window = function(scope, parent, opener){
         toString : function(){
             return '[Window]';
         },
-        getComputedStyle : function(element, pseudoElement){
-            if(CSS2Properties){
-                return element?
-                    element.style:new CSS2Properties({cssText:""});
-            }
+
+        /**
+         * getComputedStyle
+         *
+         * Firefox 3.6:
+         *  - Requires both elements to be present else an
+         *    exception is thrown.
+         *  - Returns a 'ComputedCSSStyleDeclaration' object.
+         *    while a raw element.style returns a 'CSSStyleDeclaration' object.
+         *  - Bogus input also throws exception
+         *
+         * Safari 4:
+         *  - Requires one argument (second can be MIA)
+         *  - Returns a CSSStyleDeclaration object
+         *  - if bad imput, returns null
+         *
+         * getComputedStyle should really be an "add on" from the css
+         * modules.  Unfortunately, 'window' comes way after the 'css'
+         * so css can't add it.
+         */
+        getComputedStyle: function(element, pseudoElement) {
+            return element.style;
         },
+
         open: function(url, name, features, replace){
-            if (features)
+            if (features) {
                 console.log("'features argument not yet implemented");
+            }
             var _window = Envjs.proxy({}),
                 open;
             if(replace && name){
                 for(open in __windows__){
-                    if(open.name === name)
+                    if(open.name === name) {
                         _window = open;
+                    }
                 }
             }
             new Window(_window, _window, this);
-            if(name)
+            if(name) {
                 _window.name = name;
+            }
             _window.document.async = false;
             _window.location.assign(Envjs.uri(url));
             return _window;
@@ -11537,10 +13926,8 @@ Window = function(scope, parent, opener){
             //console.log('closing window %s', __windows__[$uuid]);
             try{
                 delete __windows__[$uuid];
-                delete scope;
-                delete this;
             }catch(e){
-                console.log('%s',e)
+                console.log('%s',e);
             }
         },
         alert : function(message){
@@ -11567,29 +13954,36 @@ Window = function(scope, parent, opener){
 
 };
 
-var __top__ = function(_scope){
-    var _parent = _scope.parent;
-    while(_scope && _parent && _scope !== _parent){
-        if(_parent === _parent.parent)break;
-        _parent = _parent.parent;
-        //console.log('scope %s _parent %s', scope, _parent);
-    }
-    return _parent || null;
-}
-
-var __windows__ = {};
 
 //finally pre-supply the window with the window-like environment
 //console.log('Default Window');
 new Window(__this__, __this__);
 console.log('[ %s ]',window.navigator.userAgent);
+/**
+ *
+ * @param {Object} event
+ */
+__extend__(Envjs.defaultEventBehaviors,{
 
+    'submit': function(event) {
+        var target = event.target;
+        while (target && target.nodeName !== 'FORM') {
+            target = target.parentNode;
+        }
+        if (target && target.nodeName === 'FORM') {
+            target.submit();
+        }
+    },
+    'click': function(event) {
+        // console.log('handling event target default behavior for click');
+    }
 
+});
 /**
  * @author john resig & the envjs team
  * @uri http://www.envjs.com/
  * @copyright 2008-2010
  * @license MIT
  */
-
-})();
+//CLOSURE_END
+}());
