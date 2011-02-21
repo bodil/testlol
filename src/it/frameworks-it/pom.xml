@@ -1,0 +1,59 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>tv.bodil.testlol.it</groupId>
+    <artifactId>frameworks-it</artifactId>
+    <version>testing</version>
+    
+    <description>
+        Integration tests for Testlol verifying framework compatibility.
+    </description>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>tv.bodil</groupId>
+                <artifactId>maven-testlol-plugin</artifactId>
+                <version>1.3-SNAPSHOT</version>
+                
+                <executions>
+                    <execution>
+                        <id>jquery</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <basePath>src/main/js</basePath>
+                            <testSuite>src/test/js/jquery</testSuite>
+                            <jsLint>false</jsLint>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>prototype</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <basePath>src/main/js</basePath>
+                            <testSuite>src/test/js/prototype</testSuite>
+                            <jsLint>false</jsLint>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>openlayers</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <basePath>src/main/js</basePath>
+                            <testSuite>src/test/js/openlayers</testSuite>
+                            <jsLint>false</jsLint>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
