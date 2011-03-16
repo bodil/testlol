@@ -7,9 +7,15 @@
     <version>1.3-SNAPSHOT</version>
     <name>Testlol</name>
     <url>http://github.com/bodil/testlol</url>
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
     <scm>
-        <connection>scm:git:git://github.com/bodil/testlol.git</connection>
-        <url>http://github.com/bodil/testlol</url>
+        <connection>scm:git:git@github.com:bodil/testlol.git</connection>
+        <developerConnection>scm:git:git@github.com:bodil/testlol.git</developerConnection>
+        <url>git@github.com:bodil/testlol.git</url>
     </scm>
     <description>
         Testlol is a Maven plugin for running Javascript unit tests in a headless browser
@@ -17,6 +23,7 @@
     </description>
     <developers>
         <developer>
+            <id>bodil</id>
             <name>Bodil Stokke</name>
             <email>bodil@bodil.tv</email>
         </developer>
