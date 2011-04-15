@@ -97,6 +97,20 @@ public class Testlol extends AbstractMojo {
      */
     private String jsLintOptions;
 
+    /**
+     * Set this to "true" to skip running tests.
+     *
+     * @parameter default-value="false" expression="${skipTests}"
+     */
+    private boolean skipTests;
+    
+    /**
+     * Set this to "true" to bypass unit tests entirely.
+     *
+     * @parameter default-value="false" expression="${maven.test.skip}"
+     */
+    private boolean skip;
+    
     private long timer;
     
     private void startTimer() {
@@ -119,6 +133,11 @@ public class Testlol extends AbstractMojo {
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+    	if (skipTests || skip) {
+    		getLog().info("Tests are skipped.");
+    		return;
+    	}
+    	
         final ContextFactory contextFactory = new ContextFactory();
 
         try {
