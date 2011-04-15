@@ -6,23 +6,15 @@
 
 package tv.bodil.testlol;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Calendar;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
@@ -107,8 +99,6 @@ public class Testlol extends AbstractMojo {
 
     private long timer;
     
-    private static final Pattern regex = Pattern.compile("/.*?/\\.\\.");
-
     private void startTimer() {
         timer = Calendar.getInstance().getTimeInMillis();
     }
@@ -119,56 +109,13 @@ public class Testlol extends AbstractMojo {
     }
 
     private Script loadJSResource(Context cx, String path) throws IOException {
-        getLog().debug("Loading JavaScript resource: " + path);
-        Reader in = new InputStreamReader(loadClasspathResource(cx, path));
-        return cx.compileReader(in, "classpath:" + path, 1, null);
+    	getLog().debug("Loading JavaScript resource: " + path);
+    	return ScriptLoader.compileScript(cx, path);
     }
     
     private void execJSResource(Context cx, Scriptable scope, String path)
             throws IOException {
         loadJSResource(cx, path).exec(cx, scope);
-    }
-
-    private InputStream loadClasspathResource(Context cx, String path) throws IOException {
-        Matcher matcher = regex.matcher(path);
-        while (matcher.find()) {
-            path = path.replace(matcher.group(), "");
-        }
-        InputStream inputStream = cx.getApplicationClassLoader().getResourceAsStream(path);
-        // In order to support both maven 2 and maven 3, we try to turn around the maven
-        // 2 bug. The strategy is to try to load with the given path and if not found try
-        // to load the same resource by without the first / (if the first character is a /)
-        if (inputStream == null) {
-            if (path.startsWith("/")) {
-                path = path.substring(1); // Remove the first /
-                inputStream = cx.getApplicationClassLoader().getResourceAsStream(path);
-            }
-        }
-        if (inputStream == null) {
-            throw new IOException("Unable to load resource: " + path);
-        }
-        return inputStream;
-    }
-
-    public File copyClasspathResource(Context cx, String path) throws IOException {
-        File source = new File(path);
-        File tempfile = File.createTempFile(source.getName(), ".tmp");
-        tempfile.deleteOnExit();
-
-        // In order to support both maven 2 and maven 3, we try to turn around the maven
-        // 2 bug. The strategy is to try to load with the given path and if not found try
-        // to load the same resource by without the first / (if the first character is a /)
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(loadClasspathResource(cx, path)));
-        BufferedWriter out = new BufferedWriter(new FileWriter(tempfile));
-        char[] buf = new char[1024];
-        int len;
-        while ((len = in.read(buf)) > 0) {
-            out.write(buf, 0, len);
-        }
-        in.close();
-        out.close();
-        return tempfile;
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {

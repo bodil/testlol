@@ -26,6 +26,7 @@
                             <testSuite>src/test/js</testSuite>
                            <globalFiles>
                                 <param>src/main/js/persistentGlobalScope.js</param>
+                                <param>src/main/js/coffeescriptGlobal.coffee</param>
                            </globalFiles>
                         </configuration>
                     </execution>
