@@ -28,9 +28,9 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.WrappedException;
 
+@SuppressWarnings("serial")
 public class Shell extends ScriptableObject {
 
-    private static final long serialVersionUID = 7044452514934467919L;
     private final Testlol testlol;
 
     @Override
