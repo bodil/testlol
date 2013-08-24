@@ -11,7 +11,6 @@ import org.codehaus.plexus.component.configurator.AbstractComponentConfigurator;
 import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
 import org.codehaus.plexus.component.configurator.ConfigurationListener;
 import org.codehaus.plexus.component.configurator.converters.composite.ObjectWithFieldsConverter;
-import org.codehaus.plexus.component.configurator.converters.special.ClassRealmConverter;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluator;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
@@ -40,9 +39,6 @@ public class IncludeProjectDependenciesComponentConfigurator extends
 			throws ComponentConfigurationException {
 
 		addProjectDependenciesToClassRealm(expressionEvaluator, containerRealm);
-
-		converterLookup.registerConverter(new ClassRealmConverter(
-				containerRealm));
 
 		ObjectWithFieldsConverter converter = new ObjectWithFieldsConverter();
 
