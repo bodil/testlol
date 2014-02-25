@@ -268,6 +268,10 @@ Envjs.loadLink = function(node, href) {
 
 (function(){
 
+function __trim__( str ){
+    return (str || "").replace( /^\s+|\s+$/g, "" );
+}
+
 
 /*
  *  cookie handling
